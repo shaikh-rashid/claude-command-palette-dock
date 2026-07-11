@@ -1,4 +1,4 @@
-# Claude Power Command Extension
+# 📊 Claude Power Command Extension
 
 A [PowerToys Command Palette](https://aka.ms/PowerToysOverview_CommandPalette) extension that shows live **Claude Code subscription usage** as a tile in the Command Palette **Dock**, plus a detail page with session, weekly, and per-model progress bars.
 
@@ -6,14 +6,14 @@ It reads the OAuth token Claude Code already stores at `%USERPROFILE%\.claude\.c
 
 Inspired by [omgapnt/ClaudeUsage](https://github.com/omgapnt/ClaudeUsage).
 
-## Features
+## ✨ Features
 
 - **Dock tile** — live 5-hour session percentage remaining, with the weekly percentage and session reset time in the subtitle. Refreshes every 30 seconds.
 - **Details page** — click the tile (or run the `Claude usage` command) for a full breakdown: session limit, 7-day all-model limit, and per-model weekly limits, each with a progress bar and reset time, plus a Refresh button.
 - **Low-quota alert** — the tile icon switches to an orange alert mark when the session drops below 20% remaining.
 - **Privacy-first** — talks only to Anthropic's official usage endpoint (`https://api.anthropic.com/api/oauth/usage`) with the token Claude Code already stores locally.
 
-## Getting started
+## 🚀 Getting started
 
 See **[INSTALL.md](INSTALL.md)** for full step-by-step instructions, troubleshooting, and uninstall. The short version:
 
@@ -27,7 +27,7 @@ Then open Command Palette (`Win+Alt+Space`) → **Settings → Dock** → add th
 
 **Requirements:** Windows 11 (22H2+), PowerToys v0.9+ with Command Palette, .NET 9 SDK, Windows 10/11 SDK, and a signed-in Claude Code installation.
 
-## Using the extension
+## 🧭 Using the extension
 
 ### The dock tile
 
@@ -39,7 +39,7 @@ Then open Command Palette (`Win+Alt+Space`) → **Settings → Dock** → add th
 | `Anthropic API error (…)` | The usage API returned an error; usually transient or an expired token |
 | `Offline — will retry` | No network; the tile recovers automatically on the next refresh |
 
-### The details page
+### 📋 The details page
 
 Open it by clicking the dock tile or running **Claude usage** from Command Palette search. It shows:
 
@@ -48,7 +48,7 @@ Open it by clicking the dock tile or running **Claude usage** from Command Palet
 - **7-day per model** — individual weekly caps (e.g. Opus), when your plan has them.
 - A **Refresh** button to re-query immediately (results are otherwise cached for 45 seconds).
 
-### Debug logging
+### 🐞 Debug logging
 
 Logging is off by default. To enable it:
 
@@ -59,7 +59,7 @@ Get-Content $env:TEMP\claude-usage-dock.log -Tail 50 -Wait
 
 Delete the flag file to turn it back off. Token values are never written to the log.
 
-## Project layout
+## 📁 Project layout
 
 ```
 ClaudeUsageDock/
@@ -79,14 +79,14 @@ build-and-install.ps1           publish -> MSIX pack -> sign -> sideload
 global.json                     pins the .NET SDK version
 ```
 
-## Contributing & roadmap
+## 🗺️ Contributing & roadmap
 
 Planned work and ideas are tracked in [TODO.md](TODO.md). Changes are recorded in [CHANGELOG.md](CHANGELOG.md).
 
-## Versioning
+## 🏷️ Versioning
 
 Semantic versioning. The source of truth is the [VERSION](VERSION) file; keep the four-part `Identity Version` in `ClaudeUsageDock/Package.appxmanifest` in sync when bumping (`MAJOR.MINOR.PATCH.0`).
 
-## License
+## 📄 License
 
 [MIT](LICENSE)

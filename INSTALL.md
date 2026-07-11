@@ -1,8 +1,8 @@
-# Installation Guide
+# 🛠️ Installation Guide
 
 This guide walks through building and installing **Claude Power Command Extension** from source on any Windows machine.
 
-## 1. Check the requirements
+## 1. ✅ Check the requirements
 
 | Requirement | Why | Check |
 |---|---|---|
@@ -17,17 +17,17 @@ Quick installs with winget:
 ```powershell
 winget install Microsoft.PowerToys
 winget install Microsoft.DotNet.SDK.9
-winget install Microsoft.WindowsSDK.10.0.26100   # or any recent Windows SDK
+winget install Microsoft.WindowsSDK.10.0.28000   # or any recent Windows SDK
 ```
 
-## 2. Get the source
+## 2. 📥 Get the source
 
 ```powershell
 git clone <repository-url>
 cd "Claude Power Command Extension"
 ```
 
-## 3. Build and install
+## 3. 🏗️ Build and install
 
 Run from a **normal** (non-elevated) PowerShell prompt:
 
@@ -46,7 +46,7 @@ The script:
 
 Re-run the same script after any code change; it handles upgrades in place.
 
-## 4. Add the dock tile
+## 4. 📌 Add the dock tile
 
 1. Open Command Palette: `Win+Alt+Space`.
 2. Open **Settings → Dock**.
@@ -54,12 +54,12 @@ Re-run the same script after any code change; it handles upgrades in place.
 
 The tile shows your 5-hour session percentage remaining and refreshes every 30 seconds. Click it for the full breakdown.
 
-## 5. Verify
+## 5. ✔️ Verify
 
 - The `Claude usage` command appears in Command Palette search.
 - The dock tile shows a percentage (or "Not signed in to Claude Code" if there's no local token — run `claude` and sign in, then wait one refresh cycle).
 
-## Troubleshooting
+## 🔧 Troubleshooting
 
 | Symptom | Fix |
 |---|---|
@@ -71,7 +71,7 @@ The tile shows your 5-hour session percentage remaining and refreshes every 30 s
 | Extension doesn't appear after install | Restart Command Palette: quit `Microsoft.CmdPal.UI` from Task Manager and reopen with `Win+Alt+Space`. |
 | Need diagnostics | `New-Item $env:TEMP\claude-usage-dock.debug -ItemType File`, reproduce, then read `$env:TEMP\claude-usage-dock.log`. Token values are never logged. |
 
-## Uninstall
+## 🗑️ Uninstall
 
 ```powershell
 Get-AppxPackage -Name ClaudeUsageDock | Remove-AppxPackage
