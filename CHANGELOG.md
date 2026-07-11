@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-07-11
+
+### Fixed
+
+- Anthropic's usage endpoint rate-limits aggressive polling (HTTP 429), which 0.2.0 made more likely by tying the cache lifetime to the refresh interval. The service now backs off on 429 (honoring `Retry-After`, default 90 s, clamped to 30 s–15 min), serializes concurrent fetches so the dock timer and page opens can't double-request, and keeps showing the last good snapshot for up to 10 minutes during rate limiting or network loss instead of an error page. API polling is also floored at one request per 30 s regardless of the UI refresh setting.
+- New "Rate limited — retrying soon" dock message and a details-page explanation for HTTP 429, shown only when no recent snapshot is available to fall back on.
+
+## [0.2.0] - 2026-07-11
+
+### Added
+
+- Settings page (Command Palette → extension settings): configurable dock refresh interval (15 s / 30 s / 1 min / 5 min) and low-quota alert threshold (10/20/30/50%). Stored via CmdPal's JSON settings store; the snapshot cache lifetime now tracks the chosen interval so every dock tick shows fresh data.
+- Token-expiry detection: the stored OAuth token's `expiresAt` is checked before calling the API, and a clear message ("Token expired — open Claude Code") replaces the generic 401 error when it's stale.
+- The details page now shows your plan type read from Claude Code's local credentials (`subscriptionType`) instead of relying on the API response.
+
+### Fixed
+
+- The Refresh button on the details page now actually bypasses the 45-second snapshot cache and re-renders with fresh data; previously it submitted a form that nothing handled.
+
+## [0.1.3] - 2026-07-11
+
+### Fixed
+
+- The packaged exe was also being indexed as a launchable Start Menu / app-search entry (from the mandatory `uap:VisualElements` block), duplicating the "Claude Usage Dock" search result alongside the real command — with an inert description and no working action, since the exe is a COM extension host, not a standalone app. Added `AppListEntry="none"` to hide it from app listings while keeping the COM server and Command Palette extension registration intact.
+
+## [0.1.2] - 2026-07-11
+
+### Fixed
+
+- Renamed the top-level command from `Claude usage` to `Claude Usage Dock` so it's discoverable by typing the extension's own name into Command Palette search — the previous title didn't share enough characters with "Claude Usage Dock" for fuzzy search to match it, so users who searched the extension name (as documented in the README/INSTALL guide) got no results.
+
+## [0.1.1] - 2026-07-11
+
+### Fixed
+
+- `build-and-install.ps1`: fixed MSIX staging step nesting the `Assets` folder inside itself (`Assets\Assets\...`) instead of merging with the icons already copied from the publish output, which made `makeappx` fail manifest validation for missing logo files.
+- `PowerCommandProvider.Dispose()` now correctly `override`s `CommandProvider.Dispose()` instead of hiding it, so the base class's disposal logic also runs.
+
 ### Changed
 
 - Renamed the project from `ClaudePowerCommand` to `ClaudeUsageDock`: folder, assembly, namespace, MSIX identity (`ClaudeUsageDock` / `CN=ClaudeUsageDock-Dev`), executable, and debug file names (`%TEMP%\claude-usage-dock.*`). If a package was installed under the old identity, remove it with `Get-AppxPackage -Name ClaudePowerCommand | Remove-AppxPackage`.

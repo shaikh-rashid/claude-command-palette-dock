@@ -27,8 +27,20 @@ internal sealed class UsageDetailsPage : ContentPage
     {
         var result = _usageService.GetSnapshotAsync(bypassCache: false).GetAwaiter().GetResult();
 
-        var refreshForm = new FormContent
+        return [new MarkdownContent(Render(result)), new RefreshFormContent(this)];
+    }
+
+    /// <summary>
+    /// The Refresh button. Submitting re-queries Anthropic past the snapshot cache
+    /// and re-renders the page with the fresh result.
+    /// </summary>
+    private sealed partial class RefreshFormContent : FormContent
+    {
+        private readonly UsageDetailsPage _page;
+
+        public RefreshFormContent(UsageDetailsPage page)
         {
+            _page = page;
             TemplateJson = """
             {
               "type": "AdaptiveCard",
@@ -39,11 +51,16 @@ internal sealed class UsageDetailsPage : ContentPage
                 { "type": "Action.Submit", "title": "Refresh", "data": { "action": "refresh" } }
               ]
             }
-            """,
-            DataJson = "{}",
-        };
+            """;
+            DataJson = "{}";
+        }
 
-        return [new MarkdownContent(Render(result)), refreshForm];
+        public override ICommandResult SubmitForm(string inputs, string data)
+        {
+            _ = _page._usageService.GetSnapshotAsync(bypassCache: true).GetAwaiter().GetResult();
+            _page.RaiseItemsChanged();
+            return CommandResult.KeepOpen();
+        }
     }
 
     private string Render(UsageFetchResult result)
@@ -85,6 +102,8 @@ internal sealed class UsageDetailsPage : ContentPage
     private static string DescribeFailure(UsageFetchResult result) => result.Outcome switch
     {
         UsageFetchOutcome.NotSignedIn => "No local Claude Code session found. Sign in with `claude login` and reopen this page.",
+        UsageFetchOutcome.TokenExpired => "Your Claude Code token has expired. Open Claude Code (run `claude` in a terminal) so it refreshes the token, then refresh this page.",
+        UsageFetchOutcome.RateLimited => "Anthropic is rate-limiting usage checks right now (HTTP 429). This clears on its own — the page will show data again within a couple of minutes.",
         UsageFetchOutcome.RequestFailed => $"Anthropic's usage API returned an error (status {result.StatusCode}).",
         UsageFetchOutcome.Offline => "Couldn't reach Anthropic — check your network connection.",
         UsageFetchOutcome.UnexpectedResponse => "Got a response that didn't look like usage data.",

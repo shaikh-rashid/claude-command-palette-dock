@@ -8,9 +8,10 @@ Inspired by [omgapnt/ClaudeUsage](https://github.com/omgapnt/ClaudeUsage).
 
 ## ✨ Features
 
-- **Dock tile** — live 5-hour session percentage remaining, with the weekly percentage and session reset time in the subtitle. Refreshes every 30 seconds.
-- **Details page** — click the tile (or run the `Claude usage` command) for a full breakdown: session limit, 7-day all-model limit, and per-model weekly limits, each with a progress bar and reset time, plus a Refresh button.
-- **Low-quota alert** — the tile icon switches to an orange alert mark when the session drops below 20% remaining.
+- **Dock tile** — live 5-hour session percentage remaining, with the weekly percentage and session reset time in the subtitle. Refreshes every 30 seconds by default (configurable from 15 s to 5 min).
+- **Details page** — click the tile (or run the `Claude Usage Dock` command) for a full breakdown: session limit, 7-day all-model limit, and per-model weekly limits, each with a progress bar and reset time, plus a Refresh button.
+- **Low-quota alert** — the tile icon switches to an orange alert mark when the session drops below a configurable threshold (20% by default).
+- **Settings** — refresh interval and alert threshold are editable from the extension's Settings page in Command Palette.
 - **Privacy-first** — talks only to Anthropic's official usage endpoint (`https://api.anthropic.com/api/oauth/usage`) with the token Claude Code already stores locally.
 
 ## 🚀 Getting started
@@ -41,12 +42,12 @@ Then open Command Palette (`Win+Alt+Space`) → **Settings → Dock** → add th
 
 ### 📋 The details page
 
-Open it by clicking the dock tile or running **Claude usage** from Command Palette search. It shows:
+Open it by clicking the dock tile or running **Claude Usage Dock** from Command Palette search. It shows:
 
 - **5-hour session** — your current session window and when it resets.
 - **7-day (all models)** — the weekly cap across every model.
 - **7-day per model** — individual weekly caps (e.g. Opus), when your plan has them.
-- A **Refresh** button to re-query immediately (results are otherwise cached for 45 seconds).
+- A **Refresh** button to re-query immediately, bypassing the snapshot cache.
 
 ### 🐞 Debug logging
 
@@ -61,7 +62,7 @@ Delete the flag file to turn it back off. Token values are never written to the 
 
 ## 📁 Project layout
 
-```
+```text
 ClaudeUsageDock/
   ClaudeUsageDock.csproj
   Program.cs                    entry point (ExtensionHostRunner)

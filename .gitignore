@@ -21,3 +21,4 @@ packages/
 
 # Logs & temp
 *.log
+.claude/settings.json

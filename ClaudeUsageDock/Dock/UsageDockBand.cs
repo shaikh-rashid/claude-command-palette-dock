@@ -10,19 +10,20 @@ namespace ClaudeUsageDock.Dock;
 /// </summary>
 internal sealed class UsageDockBand
 {
-    private const int LowSessionThresholdPercent = 20;
     private const string NormalIconPath = "Assets\\icons\\claude-mark.svg";
     private const string AlertIconPath = "Assets\\icons\\claude-mark-alert.svg";
 
     private readonly ClaudeUsageService _usageService;
+    private readonly SettingsManager _settings;
     private readonly ListItem _tile;
     private string? _appliedIconPath;
 
     public WrappedDockItem DockItem { get; }
 
-    public UsageDockBand(ClaudeUsageService usageService, UsageDetailsPage detailsPage)
+    public UsageDockBand(ClaudeUsageService usageService, SettingsManager settings, UsageDetailsPage detailsPage)
     {
         _usageService = usageService;
+        _settings = settings;
         _tile = new ListItem(detailsPage)
         {
             Title = "Claude usage",
@@ -50,12 +51,14 @@ internal sealed class UsageDockBand
         ApplyTile(
             title: $"{sessionLeft}% session left",
             subtitle: $"{weeklyLeft}% week · resets {resetsLocal:t}",
-            lowOnQuota: sessionLeft < LowSessionThresholdPercent);
+            lowOnQuota: sessionLeft < _settings.LowQuotaThresholdPercent);
     }
 
     private static string DescribeFailure(UsageFetchOutcome outcome, int? statusCode) => outcome switch
     {
         UsageFetchOutcome.NotSignedIn => "Not signed in to Claude Code",
+        UsageFetchOutcome.TokenExpired => "Token expired — open Claude Code",
+        UsageFetchOutcome.RateLimited => "Rate limited — retrying soon",
         UsageFetchOutcome.RequestFailed => $"Anthropic API error ({statusCode})",
         UsageFetchOutcome.Offline => "Offline — will retry",
         UsageFetchOutcome.UnexpectedResponse => "Unexpected response",

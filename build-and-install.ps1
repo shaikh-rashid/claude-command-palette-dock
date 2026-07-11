@@ -56,7 +56,7 @@ Write-Host "[2/6] Stage MSIX payload"
 if (Test-Path $stagingDir) { Remove-Item $stagingDir -Recurse -Force }
 New-Item $stagingDir -ItemType Directory | Out-Null
 Copy-Item "$publishDir\*" $stagingDir -Recurse -Force
-Copy-Item (Join-Path $projectDir "Assets") (Join-Path $stagingDir "Assets") -Recurse -Force
+Copy-Item (Join-Path $projectDir "Assets\*") (Join-Path $stagingDir "Assets") -Recurse -Force
 Copy-Item (Join-Path $projectDir "Package.appxmanifest") (Join-Path $stagingDir "AppxManifest.xml") -Force
 
 Write-Host "[3/6] Ensure a dev signing certificate exists"

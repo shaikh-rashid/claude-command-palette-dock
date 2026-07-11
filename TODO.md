@@ -8,17 +8,12 @@ Legend: `[ ]` planned · `[~]` in progress · `[x]` done
 
 ## 🔥 Now
 
-- [ ] First successful build + install on a dev machine (needs .NET 9 SDK and Windows 10/11 SDK installed)
-- [ ] Verify dock band renders and refreshes in Command Palette 0.11+
-- [ ] Verify per-model weekly limits parse correctly against a live API response
+(nothing in flight)
 
 ## ⏭️ Next
 
-- [ ] Refresh button on the details page should actually bypass the cache (wire the AdaptiveCard submit to `GetSnapshotAsync(bypassCache: true)`)
-- [ ] Handle token refresh: read `refreshToken`/`expiresAt` from credentials and surface a clearer message when the access token is stale
-- [ ] Configurable low-quota threshold (currently hardcoded at 20%)
-- [ ] Configurable refresh interval (currently 30 s dock / 45 s cache)
 - [ ] Better icons — replace placeholder star mark with a proper Claude-styled glyph, light/dark theme variants
+- [ ] Actively refresh a stale token using `refreshToken` (we currently only detect expiry and point the user at Claude Code)
 
 ## 💡 Ideas
 
@@ -32,6 +27,14 @@ Legend: `[ ]` planned · `[~]` in progress · `[x]` done
 
 ## ✅ Done
 
+- [x] First successful build + install on a dev machine (2026-07-11; required installing Windows SDK 26100 alongside 28000)
+- [x] Verify dock band renders and refreshes in Command Palette
+- [x] Verify per-model weekly limits parse correctly against a live API response
+- [x] Refresh button on the details page bypasses the cache (AdaptiveCard submit wired to `GetSnapshotAsync(bypassCache: true)`)
+- [x] Detect a stale access token via `expiresAt` and surface a clearer message ("Token expired — open Claude Code")
+- [x] Configurable low-quota threshold (Settings page: 10/20/30/50%)
+- [x] Configurable refresh interval (Settings page: 15 s–5 min; snapshot cache tracks the interval automatically)
+- [x] Show plan type from local credentials (`subscriptionType`) on the details page
 - [x] Project scaffold: MSIX-packaged Command Palette extension (COM host, provider, manifest)
 - [x] `ClaudeUsageService` — credentials read + Anthropic usage API client with caching
 - [x] Dock band with live session/weekly percentages and reset time

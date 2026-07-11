@@ -56,7 +56,7 @@ The tile shows your 5-hour session percentage remaining and refreshes every 30 s
 
 ## 5. ✔️ Verify
 
-- The `Claude usage` command appears in Command Palette search.
+- The `Claude Usage Dock` command appears in Command Palette search.
 - The dock tile shows a percentage (or "Not signed in to Claude Code" if there's no local token — run `claude` and sign in, then wait one refresh cycle).
 
 ## 🔧 Troubleshooting
