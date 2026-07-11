@@ -15,7 +15,8 @@ Inspired by [omgapnt/ClaudeUsage](https://github.com/omgapnt/ClaudeUsage).
 - **Weekly sparkline** — a 7-day usage trend chart on the details page. History stays on your machine.
 - **Token auto-refresh** — when the stored Claude Code token expires, the extension refreshes it itself (and writes it back for Claude Code), so the tile keeps working overnight.
 - **Settings** — refresh interval, alert threshold, and toast notifications are editable from the extension's Settings page in Command Palette.
-- **Privacy-first** — talks only to Anthropic's official usage endpoint (`https://api.anthropic.com/api/oauth/usage`) with the token Claude Code already stores locally.
+- **Resilient polling** — backs off when Anthropic rate-limits (HTTP 429) and keeps showing the last good numbers for up to 10 minutes instead of an error tile.
+- **Privacy-first** — talks only to Anthropic's official endpoints with the token Claude Code already stores locally; usage history is a local file.
 
 ## 🚀 Getting started
 
@@ -38,17 +39,20 @@ Then open Command Palette (`Win+Alt+Space`) → **Settings → Dock** → add th
 | Tile shows | Meaning |
 |---|---|
 | `74% session left` / `91% week · resets 14:00` | Normal operation — session %, weekly %, and when the 5-hour window resets |
-| Orange icon | Less than 20% of the session remains |
+| Red alert badge on the icon | The session is below your alert threshold (a toast also fires once per dip) |
 | `Not signed in to Claude Code` | No local token found — sign in to Claude Code |
-| `Anthropic API error (…)` | The usage API returned an error; usually transient or an expired token |
+| `Session expired — sign in to Claude Code` | The token expired **and** automatic refresh failed — sign in again |
+| `Rate limited — retrying soon` | Anthropic returned 429 and there's no recent snapshot to show; clears on its own |
+| `Anthropic API error (…)` | The usage API returned an error; usually transient |
 | `Offline — will retry` | No network; the tile recovers automatically on the next refresh |
 
 ### 📋 The details page
 
 Open it by clicking the dock tile or running **Claude Usage Dock** from Command Palette search. It shows:
 
-- **5-hour session** — your current session window and when it resets.
-- **7-day (all models)** — the weekly cap across every model.
+- Your **plan type** (read from Claude Code's local credentials) and when the data was last checked.
+- **5-hour session** — your current session window and when it resets, with a projection of when it runs out at your current pace (shown once ~15 minutes of history exists).
+- **7-day (all models)** — the weekly cap across every model, with a 7-day usage sparkline once enough history has accumulated.
 - **7-day per model** — individual weekly caps (e.g. Opus), when your plan has them.
 - A **Refresh** button to re-query immediately, bypassing the snapshot cache.
 
