@@ -12,14 +12,10 @@ Legend: `[ ]` planned · `[~]` in progress · `[x]` done
 
 ## ⏭️ Next
 
-- [ ] Better icons — replace placeholder star mark with a proper Claude-styled glyph, light/dark theme variants
-- [ ] Actively refresh a stale token using `refreshToken` (we currently only detect expiry and point the user at Claude Code)
+(nothing queued — pull from Ideas)
 
 ## 💡 Ideas
 
-- [ ] Toast notification when session usage crosses the alert threshold
-- [ ] Show estimated time until the session hits 0% at current burn rate
-- [ ] History sparkline: keep a rolling local log of snapshots and chart usage over the week
 - [ ] Multiple accounts: support more than one credentials file / profile
 - [ ] Publish signed releases (GitHub Actions build + MSIX artifact) so users don't need the SDKs
 - [ ] WinGet / Microsoft Store distribution
@@ -27,6 +23,11 @@ Legend: `[ ]` planned · `[~]` in progress · `[x]` done
 
 ## ✅ Done
 
+- [x] Better icons — original Claude-styled sunburst glyph with light/dark theme variants and an alert badge (v0.3.0)
+- [x] Actively refresh a stale token using `refreshToken`, with atomic write-back to the credentials file (v0.3.0)
+- [x] Toast notification when session usage crosses the alert threshold, with a settings toggle (v0.3.0)
+- [x] Show estimated time until the session hits 0% at current burn rate (v0.3.0)
+- [x] History sparkline: rolling local log of snapshots + weekly usage chart on the details page (v0.3.0)
 - [x] First successful build + install on a dev machine (2026-07-11; required installing Windows SDK 26100 alongside 28000)
 - [x] Verify dock band renders and refreshes in Command Palette
 - [x] Verify per-model weekly limits parse correctly against a live API response

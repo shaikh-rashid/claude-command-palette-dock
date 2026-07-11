@@ -10,13 +10,11 @@ namespace ClaudeUsageDock.Dock;
 /// </summary>
 internal sealed class UsageDockBand
 {
-    private const string NormalIconPath = "Assets\\icons\\claude-mark.svg";
-    private const string AlertIconPath = "Assets\\icons\\claude-mark-alert.svg";
-
     private readonly ClaudeUsageService _usageService;
     private readonly SettingsManager _settings;
     private readonly ListItem _tile;
-    private string? _appliedIconPath;
+    private bool _appliedLowQuota;
+    private bool _lowQuotaNotified;
 
     public WrappedDockItem DockItem { get; }
 
@@ -27,9 +25,8 @@ internal sealed class UsageDockBand
         _tile = new ListItem(detailsPage)
         {
             Title = "Claude usage",
-            Icon = IconHelpers.FromRelativePath(NormalIconPath),
+            Icon = Icons.ClaudeMark,
         };
-        _appliedIconPath = NormalIconPath;
         DockItem = new WrappedDockItem([_tile], "claudeusagedock.dock.usage", "Claude Usage");
     }
 
@@ -47,17 +44,27 @@ internal sealed class UsageDockBand
         var sessionLeft = (int)Math.Round(snapshot.SessionRemainingPercent);
         var weeklyLeft = (int)Math.Round(snapshot.WeeklyRemainingPercent);
         var resetsLocal = snapshot.SessionResetsAt.ToLocalTime();
+        var lowOnQuota = sessionLeft < _settings.LowQuotaThresholdPercent;
+
+        // Toast once per dip below the threshold; recovering (session reset)
+        // re-arms it for the next one.
+        if (lowOnQuota && !_lowQuotaNotified && _settings.LowQuotaToastEnabled)
+        {
+            ToastNotifier.ShowLowQuota(sessionLeft, resetsLocal);
+        }
+
+        _lowQuotaNotified = lowOnQuota;
 
         ApplyTile(
             title: $"{sessionLeft}% session left",
             subtitle: $"{weeklyLeft}% week · resets {resetsLocal:t}",
-            lowOnQuota: sessionLeft < _settings.LowQuotaThresholdPercent);
+            lowOnQuota: lowOnQuota);
     }
 
     private static string DescribeFailure(UsageFetchOutcome outcome, int? statusCode) => outcome switch
     {
         UsageFetchOutcome.NotSignedIn => "Not signed in to Claude Code",
-        UsageFetchOutcome.TokenExpired => "Token expired — open Claude Code",
+        UsageFetchOutcome.TokenExpired => "Session expired — sign in to Claude Code",
         UsageFetchOutcome.RateLimited => "Rate limited — retrying soon",
         UsageFetchOutcome.RequestFailed => $"Anthropic API error ({statusCode})",
         UsageFetchOutcome.Offline => "Offline — will retry",
@@ -70,20 +77,10 @@ internal sealed class UsageDockBand
         _tile.Title = title;
         _tile.Subtitle = subtitle;
 
-        var iconPath = lowOnQuota ? AlertIconPath : NormalIconPath;
-        if (iconPath == _appliedIconPath)
+        if (lowOnQuota != _appliedLowQuota)
         {
-            return;
-        }
-
-        try
-        {
-            _tile.Icon = IconHelpers.FromRelativePath(iconPath);
-            _appliedIconPath = iconPath;
-        }
-        catch (IOException)
-        {
-            // Keep whatever icon is already showing rather than leave the tile blank.
+            _tile.Icon = lowOnQuota ? Icons.ClaudeMarkAlert : Icons.ClaudeMark;
+            _appliedLowQuota = lowOnQuota;
         }
     }
 }

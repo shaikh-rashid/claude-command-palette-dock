@@ -18,7 +18,7 @@ public sealed partial class PowerCommandProvider : CommandProvider, IDisposable
     {
         Id = "ClaudeUsageDock";
         DisplayName = "Claude Usage Dock";
-        Icon = IconHelpers.FromRelativePath("Assets\\icons\\claude-mark.svg");
+        Icon = Icons.ClaudeMark;
         Settings = _settingsManager.Settings;
 
         _detailsPage = new UsageDetailsPage(_usageService);
@@ -55,7 +55,7 @@ public sealed partial class PowerCommandProvider : CommandProvider, IDisposable
         {
             Title = "Claude Usage Dock",
             Subtitle = "Session, weekly, and per-model limits",
-            Icon = IconHelpers.FromRelativePath("Assets\\icons\\claude-mark.svg"),
+            Icon = Icons.ClaudeMark,
         },
     ];
 

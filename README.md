@@ -10,8 +10,11 @@ Inspired by [omgapnt/ClaudeUsage](https://github.com/omgapnt/ClaudeUsage).
 
 - **Dock tile** — live 5-hour session percentage remaining, with the weekly percentage and session reset time in the subtitle. Refreshes every 30 seconds by default (configurable from 15 s to 5 min).
 - **Details page** — click the tile (or run the `Claude Usage Dock` command) for a full breakdown: session limit, 7-day all-model limit, and per-model weekly limits, each with a progress bar and reset time, plus a Refresh button.
-- **Low-quota alert** — the tile icon switches to an orange alert mark when the session drops below a configurable threshold (20% by default).
-- **Settings** — refresh interval and alert threshold are editable from the extension's Settings page in Command Palette.
+- **Low-quota alert** — the tile icon gains a red alert badge when the session drops below a configurable threshold (20% by default), and a Windows toast notification fires the first time it crosses (can be turned off).
+- **Burn-rate estimate** — the details page projects when your session hits 0% at the current pace, based on a rolling local snapshot log.
+- **Weekly sparkline** — a 7-day usage trend chart on the details page. History stays on your machine.
+- **Token auto-refresh** — when the stored Claude Code token expires, the extension refreshes it itself (and writes it back for Claude Code), so the tile keeps working overnight.
+- **Settings** — refresh interval, alert threshold, and toast notifications are editable from the extension's Settings page in Command Palette.
 - **Privacy-first** — talks only to Anthropic's official usage endpoint (`https://api.anthropic.com/api/oauth/usage`) with the token Claude Code already stores locally.
 
 ## 🚀 Getting started
@@ -67,14 +70,18 @@ ClaudeUsageDock/
   ClaudeUsageDock.csproj
   Program.cs                    entry point (ExtensionHostRunner)
   PowerCommandExtension.cs      IExtension implementation
-  PowerCommandProvider.cs       top-level command + dock band wiring, refresh timer
+  PowerCommandProvider.cs       top-level command + dock band wiring, refresh timer, settings
+  Icons.cs                      themed (light/dark) sunburst icons
   Services/
-    ClaudeUsageService.cs       reads credentials, calls Anthropic's usage API
+    ClaudeUsageService.cs       credentials + token refresh, Anthropic usage API client
+    UsageHistoryStore.cs        rolling local snapshot log (burn rate + sparkline)
+    SettingsManager.cs          user settings (interval, threshold, toasts)
+    ToastNotifier.cs            low-quota Windows notification
     DebugLogger.cs              opt-in file logging
   Dock/
     UsageDockBand.cs            the dock tile (title/subtitle/icon per refresh)
   Pages/
-    UsageDetailsPage.cs         full stats page with progress bars
+    UsageDetailsPage.cs         full stats page: progress bars, estimate, sparkline
   Assets/                       app tile logos + status icons
 build-and-install.ps1           publish -> MSIX pack -> sign -> sideload
 global.json                     pins the .NET SDK version

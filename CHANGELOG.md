@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-11
+
+### Added
+
+- Automatic token refresh: when the stored access token has expired, the extension exchanges `refreshToken` at Anthropic's token endpoint (the same OAuth client as Claude Code) and writes the rotated tokens back to `.credentials.json` atomically, preserving all other fields. If the write-back fails, refreshed tokens are kept in memory so the extension keeps working; refresh attempts are rate-limited to one per 5 minutes.
+- Low-quota toast notification: a Windows notification fires the first time the session drops below the alert threshold (re-arms after the session resets). Can be turned off in the extension's settings.
+- Burn-rate estimate on the details page: projects when the session hits 0% from the last ~90 minutes of samples, or notes that the session will last until reset. Hidden when usage is flat or history is too thin.
+- Weekly usage sparkline on the details page (6-hour buckets over 7 days), backed by a new rolling local snapshot log (`usage-history.csv`, ~4-minute sample spacing, 8-day retention, never leaves the machine).
+
+### Changed
+
+- New icons: an original Claude-styled sunburst mark in terracotta replaces the placeholder star, with separate light/dark theme variants and a red exclamation badge for the low-quota alert state.
+- "Token expired" messages now say to sign in again, since they only appear after automatic refresh has failed.
+
 ## [0.2.1] - 2026-07-11
 
 ### Fixed

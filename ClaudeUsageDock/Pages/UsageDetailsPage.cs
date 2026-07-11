@@ -20,7 +20,7 @@ internal sealed class UsageDetailsPage : ContentPage
         Id = "claudeusagedock.page.usage";
         Name = "Claude Usage";
         Title = "Claude usage";
-        Icon = IconHelpers.FromRelativePath("Assets\\icons\\claude-mark.svg");
+        Icon = Icons.ClaudeMark;
     }
 
     public override IContent[] GetContent()
@@ -78,7 +78,9 @@ internal sealed class UsageDetailsPage : ContentPage
         text.AppendLine();
 
         AppendBar(text, "5-hour session", snapshot.SessionRemainingPercent, snapshot.SessionResetsAt);
+        AppendBurnEstimate(text, snapshot);
         AppendBar(text, "7-day (all models)", snapshot.WeeklyRemainingPercent, snapshot.WeeklyResetsAt);
+        AppendWeeklySparkline(text);
 
         foreach (var model in snapshot.PerModelWeekly)
         {
@@ -86,6 +88,79 @@ internal sealed class UsageDetailsPage : ContentPage
         }
 
         return text.ToString();
+    }
+
+    /// <summary>Projects when the session hits 0% from the last ~90 minutes of samples.</summary>
+    private void AppendBurnEstimate(StringBuilder text, ClaudeUsageSnapshot snapshot)
+    {
+        var points = _usageService.History.Load(TimeSpan.FromMinutes(90));
+        if (points.Count < 2)
+        {
+            return;
+        }
+
+        var oldest = points[0];
+        var newest = points[^1];
+        var elapsedHours = (newest.Timestamp - oldest.Timestamp).TotalHours;
+        if (elapsedHours < 0.25)
+        {
+            return; // Not enough spread to say anything credible.
+        }
+
+        var burnPerHour = (oldest.SessionRemainingPercent - newest.SessionRemainingPercent) / elapsedHours;
+        if (burnPerHour < 1)
+        {
+            return; // Flat or recovering — an estimate would be noise.
+        }
+
+        var hoursLeft = snapshot.SessionRemainingPercent / burnPerHour;
+        var emptyAt = DateTimeOffset.UtcNow.AddHours(hoursLeft);
+
+        text.AppendLine(emptyAt >= snapshot.SessionResetsAt
+            ? "*At the current pace, your session lasts until it resets.*"
+            : $"*At the current pace (≈{burnPerHour:F0}%/h), the session runs out around {emptyAt.ToLocalTime():t}.*");
+        text.AppendLine();
+    }
+
+    /// <summary>Sparkline of weekly usage (used %, 6-hour buckets over the past 7 days).</summary>
+    private void AppendWeeklySparkline(StringBuilder text)
+    {
+        const int BucketCount = 28;
+        var window = TimeSpan.FromDays(7);
+        var points = _usageService.History.Load(window);
+        if (points.Count < 3)
+        {
+            return;
+        }
+
+        var start = DateTimeOffset.UtcNow - window;
+        var bucketLength = TimeSpan.FromTicks(window.Ticks / BucketCount);
+        var levels = "▁▂▃▄▅▆▇█";
+        var line = new StringBuilder(BucketCount);
+        var filledBuckets = 0;
+
+        for (var i = 0; i < BucketCount; i++)
+        {
+            var bucketEnd = start + bucketLength * (i + 1);
+            var sample = points.LastOrDefault(p => p.Timestamp < bucketEnd && p.Timestamp >= bucketEnd - bucketLength);
+            if (sample is null)
+            {
+                line.Append('·');
+                continue;
+            }
+
+            var usedPercent = Math.Clamp(100 - sample.WeeklyRemainingPercent, 0, 100);
+            line.Append(levels[Math.Min((int)(usedPercent / 100 * levels.Length), levels.Length - 1)]);
+            filledBuckets++;
+        }
+
+        if (filledBuckets < 3)
+        {
+            return; // Sparkline needs a little history before it means anything.
+        }
+
+        text.AppendLine($"`{line}` *usage over the past week*");
+        text.AppendLine();
     }
 
     private void AppendBar(StringBuilder text, string label, double remainingPercent, DateTimeOffset resetsAt)
@@ -102,7 +177,7 @@ internal sealed class UsageDetailsPage : ContentPage
     private static string DescribeFailure(UsageFetchResult result) => result.Outcome switch
     {
         UsageFetchOutcome.NotSignedIn => "No local Claude Code session found. Sign in with `claude login` and reopen this page.",
-        UsageFetchOutcome.TokenExpired => "Your Claude Code token has expired. Open Claude Code (run `claude` in a terminal) so it refreshes the token, then refresh this page.",
+        UsageFetchOutcome.TokenExpired => "Your Claude Code token has expired and automatic refresh didn't succeed. Sign in again in Claude Code (run `claude` in a terminal), then refresh this page.",
         UsageFetchOutcome.RateLimited => "Anthropic is rate-limiting usage checks right now (HTTP 429). This clears on its own — the page will show data again within a couple of minutes.",
         UsageFetchOutcome.RequestFailed => $"Anthropic's usage API returned an error (status {result.StatusCode}).",
         UsageFetchOutcome.Offline => "Couldn't reach Anthropic — check your network connection.",

@@ -1,5 +1,7 @@
 using System.Globalization;
+using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace ClaudeUsageDock.Services;
 
@@ -39,8 +41,14 @@ public sealed record UsageFetchResult(UsageFetchOutcome Outcome, ClaudeUsageSnap
 public sealed class ClaudeUsageService : IDisposable
 {
     private const string UsageEndpoint = "https://api.anthropic.com/api/oauth/usage";
+    private const string TokenEndpoint = "https://console.anthropic.com/v1/oauth/token";
+
+    /// <summary>Claude Code's public OAuth client id — we refresh the same grant it created.</summary>
+    private const string ClaudeCodeClientId = "9d1c250a-e61b-44d9-88ed-5944d1962f5e";
+
     private const string OAuthBetaHeader = "oauth-2025-04-20";
     private const string ClientUserAgent = "claude-usage-dock/1.0";
+    private static readonly TimeSpan RefreshRetryInterval = TimeSpan.FromMinutes(5);
 
     /// <summary>How long we keep serving the last good snapshot while the API is rate-limiting us or unreachable.</summary>
     private static readonly TimeSpan StaleServeLimit = TimeSpan.FromMinutes(10);
@@ -51,11 +59,22 @@ public sealed class ClaudeUsageService : IDisposable
 
     private static readonly HttpClient SharedHttpClient = new() { Timeout = TimeSpan.FromSeconds(10) };
 
+    /// <summary>Local snapshot log backing the burn-rate estimate and weekly sparkline.</summary>
+    public UsageHistoryStore History { get; } = new();
+
     private readonly string _credentialsFilePath;
     private readonly SemaphoreSlim _fetchLock = new(1, 1);
     private ClaudeUsageSnapshot? _lastSnapshot;
     private UsageFetchResult? _lastFailure;
     private DateTimeOffset _backoffUntil = DateTimeOffset.MinValue;
+    private DateTimeOffset _lastRefreshAttempt = DateTimeOffset.MinValue;
+
+    /// <summary>
+    /// Tokens we refreshed but could not write back to the credentials file.
+    /// Without this a failed write-back would strand us (and Claude Code) on a
+    /// rotated-away refresh token.
+    /// </summary>
+    private StoredCredentials? _memoryCredentials;
 
     public ClaudeUsageService()
     {
@@ -126,10 +145,24 @@ public sealed class ClaudeUsageService : IDisposable
             return UsageFetchResult.Failure(UsageFetchOutcome.NotSignedIn);
         }
 
+        // Prefer in-memory tokens from a refresh whose write-back failed; the
+        // file's copy is stale (and its refresh token possibly rotated away).
+        if (_memoryCredentials is { } memory &&
+            memory.ExpiresAt > (credentials.ExpiresAt ?? DateTimeOffset.MinValue))
+        {
+            credentials = memory with { PlanType = credentials.PlanType ?? memory.PlanType };
+        }
+
         if (credentials.ExpiresAt is { } expiresAt && expiresAt <= DateTimeOffset.UtcNow)
         {
-            DebugLogger.Log($"Stored access token expired at {expiresAt:O}; Claude Code needs to refresh it.");
-            return UsageFetchResult.Failure(UsageFetchOutcome.TokenExpired);
+            var refreshed = await TryRefreshTokenAsync(credentials).ConfigureAwait(false);
+            if (refreshed is null)
+            {
+                DebugLogger.Log($"Stored access token expired at {expiresAt:O} and refresh didn't succeed.");
+                return UsageFetchResult.Failure(UsageFetchOutcome.TokenExpired);
+            }
+
+            credentials = refreshed;
         }
 
         try
@@ -158,6 +191,7 @@ public sealed class ClaudeUsageService : IDisposable
             var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             var snapshot = ParseSnapshot(body, credentials.PlanType ?? "unknown");
             _lastSnapshot = snapshot;
+            History.Record(snapshot);
             return UsageFetchResult.Ok(snapshot);
         }
         catch (HttpRequestException ex)
@@ -236,7 +270,7 @@ public sealed class ClaudeUsageService : IDisposable
         return DateTimeOffset.UtcNow;
     }
 
-    private sealed record StoredCredentials(string? AccessToken, DateTimeOffset? ExpiresAt, string? PlanType);
+    private sealed record StoredCredentials(string? AccessToken, string? RefreshToken, DateTimeOffset? ExpiresAt, string? PlanType);
 
     private StoredCredentials ReadCredentials()
     {
@@ -244,7 +278,7 @@ public sealed class ClaudeUsageService : IDisposable
         {
             if (!File.Exists(_credentialsFilePath))
             {
-                return new StoredCredentials(null, null, null);
+                return new StoredCredentials(null, null, null, null);
             }
 
             using var document = JsonDocument.Parse(File.ReadAllText(_credentialsFilePath));
@@ -259,13 +293,114 @@ public sealed class ClaudeUsageService : IDisposable
 
             return new StoredCredentials(
                 oauth?.GetPropertyOrNull("accessToken")?.GetString(),
+                oauth?.GetPropertyOrNull("refreshToken")?.GetString(),
                 expiresAt,
                 oauth?.GetPropertyOrNull("subscriptionType")?.GetString());
         }
         catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
         {
             DebugLogger.Log($"Could not read Claude Code credentials file: {ex.Message}");
-            return new StoredCredentials(null, null, null);
+            return new StoredCredentials(null, null, null, null);
+        }
+    }
+
+    /// <summary>
+    /// Exchanges the stored refresh token for a fresh access token, the same way
+    /// Claude Code does. Only called once the stored token is actually expired,
+    /// so a running Claude Code instance (which refreshes proactively) never races us.
+    /// </summary>
+    private async Task<StoredCredentials?> TryRefreshTokenAsync(StoredCredentials current)
+    {
+        if (string.IsNullOrEmpty(current.RefreshToken))
+        {
+            return null;
+        }
+
+        // A dead refresh token fails deterministically; don't retry every tick.
+        if (DateTimeOffset.UtcNow - _lastRefreshAttempt < RefreshRetryInterval)
+        {
+            return null;
+        }
+
+        _lastRefreshAttempt = DateTimeOffset.UtcNow;
+
+        try
+        {
+            var payload = JsonSerializer.Serialize(new Dictionary<string, string>
+            {
+                ["grant_type"] = "refresh_token",
+                ["refresh_token"] = current.RefreshToken,
+                ["client_id"] = ClaudeCodeClientId,
+            });
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, TokenEndpoint)
+            {
+                Content = new StringContent(payload, Encoding.UTF8, "application/json"),
+            };
+            request.Headers.TryAddWithoutValidation("User-Agent", ClientUserAgent);
+
+            using var response = await SharedHttpClient.SendAsync(request).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                DebugLogger.Log($"Token refresh failed with status {(int)response.StatusCode}.");
+                return null;
+            }
+
+            var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            using var document = JsonDocument.Parse(body);
+            var root = document.RootElement;
+
+            var accessToken = root.GetPropertyOrNull("access_token")?.GetString();
+            if (string.IsNullOrEmpty(accessToken))
+            {
+                DebugLogger.Log("Token refresh response contained no access token.");
+                return null;
+            }
+
+            var refreshToken = root.GetPropertyOrNull("refresh_token")?.GetString() ?? current.RefreshToken;
+            var expiresInSeconds = root.GetPropertyOrNull("expires_in")?.GetDouble() ?? 3600;
+            var expiresAt = DateTimeOffset.UtcNow.AddSeconds(expiresInSeconds);
+
+            var refreshed = current with { AccessToken = accessToken, RefreshToken = refreshToken, ExpiresAt = expiresAt };
+            _memoryCredentials = refreshed;
+            PersistRefreshedCredentials(accessToken, refreshToken, expiresAt);
+            DebugLogger.Log("Access token refreshed.");
+            return refreshed;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
+        {
+            DebugLogger.Log($"Token refresh failed: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Writes rotated tokens back so Claude Code keeps working. Preserves every
+    /// other field in the file and swaps it in atomically; on failure the
+    /// in-memory copy keeps this extension alive until Claude Code re-signs-in.
+    /// </summary>
+    private void PersistRefreshedCredentials(string accessToken, string refreshToken, DateTimeOffset expiresAt)
+    {
+        try
+        {
+            var rootNode = JsonNode.Parse(File.ReadAllText(_credentialsFilePath)) as JsonObject ?? [];
+            if (rootNode["claudeAiOauth"] is not JsonObject oauth)
+            {
+                oauth = [];
+                rootNode["claudeAiOauth"] = oauth;
+            }
+
+            oauth["accessToken"] = accessToken;
+            oauth["refreshToken"] = refreshToken;
+            oauth["expiresAt"] = expiresAt.ToUnixTimeMilliseconds();
+
+            var tempPath = _credentialsFilePath + ".tmp";
+            File.WriteAllText(tempPath, rootNode.ToJsonString());
+            File.Move(tempPath, _credentialsFilePath, overwrite: true);
+        }
+        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
+        {
+            DebugLogger.Log($"Could not write refreshed tokens back to the credentials file: {ex.Message}");
         }
     }
 

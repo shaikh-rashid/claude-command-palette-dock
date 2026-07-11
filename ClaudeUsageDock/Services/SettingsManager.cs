@@ -33,9 +33,17 @@ internal sealed class SettingsManager : JsonSettingsManager
             new ChoiceSetSetting.Choice("50%", "50"),
         ]);
 
+    private readonly ToggleSetting _lowQuotaToast = new(
+        "lowQuotaToast",
+        "Notify when the session runs low",
+        "Show a Windows notification the first time session usage drops below the alert threshold",
+        true);
+
     public TimeSpan DockRefreshInterval => TimeSpan.FromSeconds(ParseOrDefault(_refreshInterval.Value, DefaultRefreshSeconds));
 
     public int LowQuotaThresholdPercent => ParseOrDefault(_lowQuotaThreshold.Value, DefaultThresholdPercent);
+
+    public bool LowQuotaToastEnabled => _lowQuotaToast.Value;
 
     public SettingsManager()
     {
@@ -43,6 +51,7 @@ internal sealed class SettingsManager : JsonSettingsManager
 
         Settings.Add(_refreshInterval);
         Settings.Add(_lowQuotaThreshold);
+        Settings.Add(_lowQuotaToast);
 
         LoadSettings();
         Settings.SettingsChanged += (_, _) => SaveSettings();
