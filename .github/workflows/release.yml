@@ -1,0 +1,85 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to (re-)release, e.g. v0.5.0"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Resolve tag and version
+        id: version
+        shell: pwsh
+        run: |
+          $tag = "${{ github.event.inputs.tag || github.ref_name }}"
+          $version = $tag.TrimStart('v')
+          $fileVersion = (Get-Content VERSION -Raw).Trim()
+          if ($version -ne $fileVersion) {
+            throw "Tag $tag (version $version) does not match the VERSION file ($fileVersion). Bump VERSION and Package.appxmanifest before tagging a release."
+          }
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Decode signing certificate
+        shell: pwsh
+        run: |
+          $bytes = [Convert]::FromBase64String("${{ secrets.RELEASE_PFX_BASE64 }}")
+          [IO.File]::WriteAllBytes("$env:RUNNER_TEMP\release.pfx", $bytes)
+
+      - name: Build, pack, and sign MSIX
+        shell: pwsh
+        run: |
+          .\scripts\ci-build-release.ps1 `
+            -PfxPath "$env:RUNNER_TEMP\release.pfx" `
+            -PfxPassword "${{ secrets.RELEASE_PFX_PASSWORD }}" `
+            -OutputDir release-output
+
+      - name: Clean up decoded certificate
+        if: always()
+        shell: pwsh
+        run: Remove-Item "$env:RUNNER_TEMP\release.pfx" -ErrorAction SilentlyContinue
+
+      - name: Extract changelog section
+        id: notes
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          $lines = Get-Content CHANGELOG.md
+          $startMatch = $lines | Select-String -Pattern "^## \[$([regex]::Escape($version))\]" | Select-Object -First 1
+          if (-not $startMatch) {
+            throw "No CHANGELOG.md section found for version $version — add one before releasing."
+          }
+          $rest = $lines[$startMatch.LineNumber..($lines.Count - 1)]
+          $nextHeading = $rest | Select-String -Pattern "^## \[" | Select-Object -First 1
+          $section = if ($nextHeading) { $rest[0..($nextHeading.LineNumber - 2)] } else { $rest }
+          $section -join "`n" | Out-File -FilePath release-notes.md -Encoding utf8
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ClaudeUsageDock ${{ steps.version.outputs.tag }}
+          body_path: release-notes.md
+          files: |
+            release-output/ClaudeUsageDock.msix
+            release-output/ClaudeUsageDock-Release.cer

@@ -16,26 +16,7 @@ $pfxPassword = "ClaudeUsageDockDev!"
 $certSubject = "CN=ClaudeUsageDock-Dev"
 $packageIdentityName = "ClaudeUsageDock"
 
-function Find-WindowsKitTool {
-    param([Parameter(Mandatory)][string]$ToolName)
-
-    $kitsRoot = "C:\Program Files (x86)\Windows Kits\10\bin"
-    if (-not (Test-Path $kitsRoot)) {
-        throw "Windows 10 SDK not found under '$kitsRoot'. Install the 'Windows 10/11 SDK' component via Visual Studio Installer, then re-run this script."
-    }
-
-    $candidate = Get-ChildItem $kitsRoot -Directory |
-        Sort-Object Name -Descending |
-        ForEach-Object { Join-Path $_.FullName "x64\$ToolName" } |
-        Where-Object { Test-Path $_ } |
-        Select-Object -First 1
-
-    if (-not $candidate) {
-        throw "Could not find $ToolName under '$kitsRoot'. Install the 'Windows 10/11 SDK' component via Visual Studio Installer, then re-run this script."
-    }
-
-    return $candidate
-}
+. (Join-Path $PSScriptRoot "scripts\BuildTools.ps1")
 
 $dotnetExe = "C:\Program Files\dotnet\dotnet.exe"
 if (-not (Test-Path $dotnetExe)) {
@@ -44,22 +25,13 @@ if (-not (Test-Path $dotnetExe)) {
 if (-not (& $dotnetExe --list-sdks | Select-String "^9\.")) {
     throw "No .NET 9 SDK is registered with dotnet ('dotnet --list-sdks' shows none). Install it from https://dotnet.microsoft.com/download and re-run this script."
 }
+Assert-WindowsSdkPlatform -PlatformVersion "10.0.26100.0"
 
-$makeAppxExe = Find-WindowsKitTool -ToolName "makeappx.exe"
-$signToolExe = Find-WindowsKitTool -ToolName "signtool.exe"
-
-Write-Host "[1/6] dotnet publish"
+Write-Host "[1/5] dotnet publish"
 & $dotnetExe publish $csproj -c Release -r win-x64 --self-contained false -p:GenerateAppxPackageOnBuild=false -v minimal -nologo
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed" }
 
-Write-Host "[2/6] Stage MSIX payload"
-if (Test-Path $stagingDir) { Remove-Item $stagingDir -Recurse -Force }
-New-Item $stagingDir -ItemType Directory | Out-Null
-Copy-Item "$publishDir\*" $stagingDir -Recurse -Force
-Copy-Item (Join-Path $projectDir "Assets\*") (Join-Path $stagingDir "Assets") -Recurse -Force
-Copy-Item (Join-Path $projectDir "Package.appxmanifest") (Join-Path $stagingDir "AppxManifest.xml") -Force
-
-Write-Host "[3/6] Ensure a dev signing certificate exists"
+Write-Host "[2/5] Ensure a dev signing certificate exists"
 $cert = Get-ChildItem Cert:\CurrentUser\My | Where-Object { $_.Subject -eq $certSubject } | Select-Object -First 1
 if (-not $cert) {
     $cert = New-SelfSignedCertificate `
@@ -74,16 +46,13 @@ $securePassword = ConvertTo-SecureString -String $pfxPassword -Force -AsPlainTex
 Export-PfxCertificate -Cert $cert -FilePath $pfxPath -Password $securePassword | Out-Null
 Export-Certificate -Cert $cert -FilePath $certPath | Out-Null
 
-Write-Host "[4/6] Pack MSIX"
-if (Test-Path $msixPath) { Remove-Item $msixPath -Force }
-& $makeAppxExe pack /d $stagingDir /p $msixPath /o | Out-Null
-if ($LASTEXITCODE -ne 0) { throw "makeappx failed" }
+Write-Host "[3/5] Stage and pack MSIX"
+New-MsixPackage -ProjectDir $projectDir -PublishDir $publishDir -StagingDir $stagingDir -OutputMsixPath $msixPath
 
-Write-Host "[5/6] Sign MSIX"
-& $signToolExe sign /fd SHA256 /a /f $pfxPath /p $pfxPassword $msixPath | Out-Null
-if ($LASTEXITCODE -ne 0) { throw "signtool failed" }
+Write-Host "[4/5] Sign MSIX"
+Set-MsixSignature -MsixPath $msixPath -PfxPath $pfxPath -PfxPassword $pfxPassword
 
-Write-Host "[6/6] Install"
+Write-Host "[5/5] Install"
 $certTrusted = Get-ChildItem Cert:\LocalMachine\TrustedPeople -ErrorAction SilentlyContinue |
     Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
 if (-not $certTrusted) {

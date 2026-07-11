@@ -1,0 +1,73 @@
+# Shared MSIX packaging helpers. Dot-sourced by build-and-install.ps1 (local
+# dev sideload) and the CI release workflow, so the staging/pack/sign steps
+# can't silently drift between the two — this is the logic that had the
+# Assets\Assets nesting bug, so it only gets fixed in one place from now on.
+
+function Assert-WindowsSdkPlatform {
+    param([Parameter(Mandatory)][string]$PlatformVersion)
+
+    # dotnet publish fails here with an opaque CsWinRT/NETSDK1140 error if this
+    # is missing — checking directly gives a much clearer message. Hit locally
+    # when a machine had only a newer preview SDK installed, not this one.
+    $platformXmlPath = "C:\Program Files (x86)\Windows Kits\10\Platforms\UAP\$PlatformVersion\Platform.xml"
+    if (-not (Test-Path $platformXmlPath)) {
+        throw "Windows SDK UAP platform $PlatformVersion is not installed (missing '$platformXmlPath'). Install it with: winget install Microsoft.WindowsSDK.10.0.26100"
+    }
+}
+
+function Find-WindowsKitTool {
+    param([Parameter(Mandatory)][string]$ToolName)
+
+    $kitsRoot = "C:\Program Files (x86)\Windows Kits\10\bin"
+    if (-not (Test-Path $kitsRoot)) {
+        throw "Windows 10 SDK not found under '$kitsRoot'. Install the 'Windows 10/11 SDK' component via Visual Studio Installer, then re-run this script."
+    }
+
+    $candidate = Get-ChildItem $kitsRoot -Directory |
+        Sort-Object Name -Descending |
+        ForEach-Object { Join-Path $_.FullName "x64\$ToolName" } |
+        Where-Object { Test-Path $_ } |
+        Select-Object -First 1
+
+    if (-not $candidate) {
+        throw "Could not find $ToolName under '$kitsRoot'. Install the 'Windows 10/11 SDK' component via Visual Studio Installer, then re-run this script."
+    }
+
+    return $candidate
+}
+
+function New-MsixPackage {
+    param(
+        [Parameter(Mandatory)][string]$ProjectDir,
+        [Parameter(Mandatory)][string]$PublishDir,
+        [Parameter(Mandatory)][string]$StagingDir,
+        [Parameter(Mandatory)][string]$OutputMsixPath
+    )
+
+    if (Test-Path $StagingDir) { Remove-Item $StagingDir -Recurse -Force }
+    New-Item $StagingDir -ItemType Directory | Out-Null
+    Copy-Item "$PublishDir\*" $StagingDir -Recurse -Force
+
+    # Copy Assets\* (contents), not the Assets folder itself — the publish
+    # output already has Assets\icons from CopyToOutputDirectory, so copying
+    # the folder as a unit nests it as Assets\Assets instead of merging.
+    Copy-Item (Join-Path $ProjectDir "Assets\*") (Join-Path $StagingDir "Assets") -Recurse -Force
+    Copy-Item (Join-Path $ProjectDir "Package.appxmanifest") (Join-Path $StagingDir "AppxManifest.xml") -Force
+
+    $makeAppxExe = Find-WindowsKitTool -ToolName "makeappx.exe"
+    if (Test-Path $OutputMsixPath) { Remove-Item $OutputMsixPath -Force }
+    & $makeAppxExe pack /d $StagingDir /p $OutputMsixPath /o | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "makeappx failed" }
+}
+
+function Set-MsixSignature {
+    param(
+        [Parameter(Mandatory)][string]$MsixPath,
+        [Parameter(Mandatory)][string]$PfxPath,
+        [Parameter(Mandatory)][string]$PfxPassword
+    )
+
+    $signToolExe = Find-WindowsKitTool -ToolName "signtool.exe"
+    & $signToolExe sign /fd SHA256 /a /f $PfxPath /p $PfxPassword $MsixPath | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "signtool failed" }
+}

@@ -21,7 +21,11 @@ Inspired by [omgapnt/ClaudeUsage](https://github.com/omgapnt/ClaudeUsage).
 
 ## 🚀 Getting started
 
-See **[INSTALL.md](INSTALL.md)** for full step-by-step instructions, troubleshooting, and uninstall. The short version:
+See **[INSTALL.md](INSTALL.md)** for full step-by-step instructions, troubleshooting, and uninstall.
+
+**Fastest path — no SDKs needed:** download `ClaudeUsageDock.msix` and `ClaudeUsageDock-Release.cer` from the [Releases page](../../releases), trust the certificate once, then `Add-AppxPackage`. Full steps in INSTALL.md.
+
+**From source:**
 
 ```powershell
 git clone <repository-url>
@@ -31,7 +35,7 @@ cd "Claude Power Command Extension"
 
 Then open Command Palette (`Win+Alt+Space`) → **Settings → Dock** → add the **Claude Usage** band.
 
-**Requirements:** Windows 11 (22H2+), PowerToys v0.9+ with Command Palette, .NET 9 SDK, Windows 10/11 SDK, and a signed-in Claude Code installation.
+**Requirements (from source only):** Windows 11 (22H2+), PowerToys v0.9+ with Command Palette, .NET 9 SDK, Windows 10/11 SDK (must include the `10.0.26100.0` UAP platform), and a signed-in Claude Code installation. The prebuilt release only needs Windows 11 + PowerToys + Claude Code.
 
 ## 🧭 Using the extension
 
@@ -94,7 +98,12 @@ ClaudeUsageDock/
   Pages/
     UsageDetailsPage.cs         full stats page: progress bars, estimate, sparkline
   Assets/                       app tile logos + status icons
-build-and-install.ps1           publish -> MSIX pack -> sign -> sideload
+scripts/
+  BuildTools.ps1                 shared publish/stage/pack/sign helpers (dev + CI)
+  ci-build-release.ps1            CI-only: builds and signs the release MSIX
+  generate-release-cert.ps1       one-time: creates the persistent release signing cert
+.github/workflows/release.yml   builds, signs, and publishes a GitHub Release on tag push
+build-and-install.ps1           publish -> MSIX pack -> sign -> sideload (local dev)
 global.json                     pins the .NET SDK version
 ```
 

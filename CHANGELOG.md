@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-07-11
+
+### Added
+
+- Signed release publishing: `.github/workflows/release.yml` builds, packs, and signs the MSIX on a `vX.Y.Z` tag push and attaches `ClaudeUsageDock.msix` plus the public `ClaudeUsageDock-Release.cer` to a GitHub Release, with release notes generated from that version's CHANGELOG.md section (the build fails if the section is missing). The workflow verifies the pushed tag matches the `VERSION` file before doing anything else.
+- `scripts/generate-release-cert.ps1`: one-time local setup that creates the persistent self-signed certificate CI signs every release with, so a user who trusts it once never has to re-trust a new certificate on a later update.
+- INSTALL.md now documents installing a prebuilt release (no SDKs required — download, trust the certificate once, `Add-AppxPackage`) as the primary path, alongside a "Publishing a release" section for maintainers.
+
+### Changed
+
+- Extracted the MSIX staging/pack/sign logic shared by local dev builds and CI releases into `scripts/BuildTools.ps1`, so a bug like the earlier `Assets\Assets` nesting issue can only exist in one place instead of silently diverging between the two. `build-and-install.ps1` now dot-sources it instead of duplicating the logic inline.
+- Both `build-and-install.ps1` and the CI release script now check that the exact required Windows SDK platform (`10.0.26100.0`) is installed *before* running `dotnet publish`, failing with a direct, actionable message instead of the opaque CsWinRT/NETSDK1140 error chain this project hit earlier.
+- Fixed INSTALL.md's quickstart `winget` command, which recommended installing Windows SDK `10.0.28000` — the project actually requires `10.0.26100` to match the csproj's `TargetFramework`; the two are not interchangeable.
+
 ## [0.4.0] - 2026-07-11
 
 ### Added

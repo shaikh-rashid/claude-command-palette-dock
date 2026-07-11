@@ -12,7 +12,7 @@ Legend: `[ ]` planned · `[~]` in progress · `[x]` done
 
 ## ⏭️ Next
 
-- [ ] Publish signed releases (GitHub Actions build + MSIX artifact) so users don't need the SDKs
+(nothing queued — pull from Ideas)
 
 ## 💡 Ideas
 
@@ -21,6 +21,7 @@ Legend: `[ ]` planned · `[~]` in progress · `[x]` done
 
 ## ✅ Done
 
+- [x] Publish signed releases: `.github/workflows/release.yml` builds, packs, and signs the MSIX on `vX.Y.Z` tag push and attaches it + the trust certificate to a GitHub Release, using changelog text as release notes (v0.5.0). One-time manual setup still needed before the first real release: run `scripts/generate-release-cert.ps1` and add the two printed values as repo secrets (`RELEASE_PFX_BASE64`, `RELEASE_PFX_PASSWORD`) — documented in INSTALL.md's "Publishing a release" section. I don't have push/secrets access to the GitHub remote from here, so this couldn't be exercised end-to-end.
 - [x] Multiple accounts: two additional profiles configurable in Settings (label + credentials file path each), each getting its own dock tile, details command, and local history log (v0.4.0)
 - [x] Better icons — original Claude-styled sunburst glyph with light/dark theme variants and an alert badge (v0.3.0)
 - [x] Actively refresh a stale token using `refreshToken`, with atomic write-back to the credentials file (v0.3.0)
