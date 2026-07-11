@@ -14,7 +14,8 @@ Inspired by [omgapnt/ClaudeUsage](https://github.com/omgapnt/ClaudeUsage).
 - **Burn-rate estimate** — the details page projects when your session hits 0% at the current pace, based on a rolling local snapshot log.
 - **Weekly sparkline** — a 7-day usage trend chart on the details page. History stays on your machine.
 - **Token auto-refresh** — when the stored Claude Code token expires, the extension refreshes it itself (and writes it back for Claude Code), so the tile keeps working overnight.
-- **Settings** — refresh interval, alert threshold, and toast notifications are editable from the extension's Settings page in Command Palette.
+- **Multiple accounts** — monitor up to two additional Claude accounts by pointing extra profiles at separately saved credential files, each with its own dock tile, command, and history.
+- **Settings** — refresh interval, alert threshold, toast notifications, and additional account profiles are editable from the extension's Settings page in Command Palette.
 - **Resilient polling** — backs off when Anthropic rate-limits (HTTP 429) and keeps showing the last good numbers for up to 10 minutes instead of an error tile.
 - **Privacy-first** — talks only to Anthropic's official endpoints with the token Claude Code already stores locally; usage history is a local file.
 
@@ -55,6 +56,12 @@ Open it by clicking the dock tile or running **Claude Usage Dock** from Command 
 - **7-day (all models)** — the weekly cap across every model, with a 7-day usage sparkline once enough history has accumulated.
 - **7-day per model** — individual weekly caps (e.g. Opus), when your plan has them.
 - A **Refresh** button to re-query immediately, bypassing the snapshot cache.
+
+### 👥 Multiple accounts
+
+Claude Code only keeps one active `.credentials.json`, so this only helps if you (or a script) already save separate copies per account — e.g. `%USERPROFILE%\.claude\.credentials.work.json` after signing in to a second account and copying the file aside.
+
+In the extension's Settings page, fill in **Second account** (and optionally **Third account**): a label and the full path to that account's saved credentials file. Each configured account gets its own dock tile, its own "Claude Usage Dock — *label*" command, and its own local history log — all refreshed independently. Leave a path blank to disable that slot. The default profile (your normal `~/.claude/.credentials.json`) is always present and unaffected by this.
 
 ### 🐞 Debug logging
 

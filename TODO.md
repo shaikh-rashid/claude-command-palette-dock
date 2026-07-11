@@ -12,17 +12,16 @@ Legend: `[ ]` planned · `[~]` in progress · `[x]` done
 
 ## ⏭️ Next
 
-(nothing queued — pull from Ideas)
+- [ ] Publish signed releases (GitHub Actions build + MSIX artifact) so users don't need the SDKs
 
 ## 💡 Ideas
 
-- [ ] Multiple accounts: support more than one credentials file / profile
-- [ ] Publish signed releases (GitHub Actions build + MSIX artifact) so users don't need the SDKs
 - [ ] WinGet / Microsoft Store distribution
 - [ ] Localize strings (en → more languages)
 
 ## ✅ Done
 
+- [x] Multiple accounts: two additional profiles configurable in Settings (label + credentials file path each), each getting its own dock tile, details command, and local history log (v0.4.0)
 - [x] Better icons — original Claude-styled sunburst glyph with light/dark theme variants and an alert badge (v0.3.0)
 - [x] Actively refresh a stale token using `refreshToken`, with atomic write-back to the credentials file (v0.3.0)
 - [x] Toast notification when session usage crosses the alert threshold, with a settings toggle (v0.3.0)

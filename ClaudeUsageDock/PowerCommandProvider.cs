@@ -8,11 +8,11 @@ namespace ClaudeUsageDock;
 
 public sealed partial class PowerCommandProvider : CommandProvider, IDisposable
 {
-    private readonly ClaudeUsageService _usageService = new();
     private readonly SettingsManager _settingsManager = new();
-    private readonly UsageDetailsPage _detailsPage;
-    private readonly UsageDockBand _dockBand;
     private readonly Timer _dockRefreshTimer;
+    private readonly object _profilesLock = new();
+
+    private IReadOnlyList<ProfileRuntime> _profiles = [];
 
     public PowerCommandProvider()
     {
@@ -21,56 +21,102 @@ public sealed partial class PowerCommandProvider : CommandProvider, IDisposable
         Icon = Icons.ClaudeMark;
         Settings = _settingsManager.Settings;
 
-        _detailsPage = new UsageDetailsPage(_usageService);
-        _dockBand = new UsageDockBand(_usageService, _settingsManager, _detailsPage);
+        RebuildProfiles();
 
         _dockRefreshTimer = new Timer(
-            async _ => await RefreshDockAsync().ConfigureAwait(false),
+            async _ => await RefreshAllAsync().ConfigureAwait(false),
             state: null,
             dueTime: TimeSpan.Zero,
             period: _settingsManager.DockRefreshInterval);
 
-        ApplyCacheLifetime();
-        _settingsManager.Settings.SettingsChanged += (_, _) => ApplySettings();
+        _settingsManager.Settings.SettingsChanged += (_, _) =>
+        {
+            RebuildProfiles();
+            _dockRefreshTimer.Change(TimeSpan.Zero, _settingsManager.DockRefreshInterval);
+        };
     }
 
-    private void ApplySettings()
+    /// <summary>
+    /// Recreates the profile set only when it actually changed, so unrelated
+    /// settings edits (refresh interval, threshold) don't drop caches or
+    /// re-trigger the low-quota toast for every account.
+    /// </summary>
+    private void RebuildProfiles()
     {
-        _dockRefreshTimer.Change(TimeSpan.Zero, _settingsManager.DockRefreshInterval);
-        ApplyCacheLifetime();
+        var desired = _settingsManager.GetProfiles();
+
+        lock (_profilesLock)
+        {
+            if (_profiles.Count == desired.Count &&
+                _profiles.Select(p => p.Profile).SequenceEqual(desired))
+            {
+                return;
+            }
+
+            foreach (var old in _profiles)
+            {
+                old.Service.Dispose();
+            }
+
+            _profiles = desired.Select(CreateRuntime).ToList();
+        }
+
+        ApplyCacheLifetimes();
+        RaiseItemsChanged(0);
     }
 
-    private void ApplyCacheLifetime()
+    private ProfileRuntime CreateRuntime(UsageProfile profile)
+    {
+        var service = new ClaudeUsageService(profile.CredentialsFilePath, profile.HistorySuffix);
+        var detailsPage = new UsageDetailsPage(service, profile);
+        var dockBand = new UsageDockBand(service, _settingsManager, detailsPage, profile);
+        var command = new CommandItem(detailsPage)
+        {
+            Title = profile.Label is null ? "Claude Usage Dock" : $"Claude Usage Dock — {profile.Label}",
+            Subtitle = "Session, weekly, and per-model limits",
+            Icon = Icons.ClaudeMark,
+        };
+
+        return new ProfileRuntime(profile, service, dockBand, command);
+    }
+
+    private void ApplyCacheLifetimes()
     {
         // Keep the cache slightly shorter than the dock interval so ticks render
         // fresh data, but never let the API be polled more than twice a minute —
         // Anthropic's usage endpoint rate-limits aggressive pollers with 429s.
         var interval = _settingsManager.DockRefreshInterval;
-        _usageService.CacheLifetime = TimeSpan.FromSeconds(Math.Max(interval.TotalSeconds - 5, 30));
+        var lifetime = TimeSpan.FromSeconds(Math.Max(interval.TotalSeconds - 5, 30));
+
+        foreach (var profile in _profiles)
+        {
+            profile.Service.CacheLifetime = lifetime;
+        }
     }
 
-    public override ICommandItem[] TopLevelCommands() =>
-    [
-        new CommandItem(_detailsPage)
-        {
-            Title = "Claude Usage Dock",
-            Subtitle = "Session, weekly, and per-model limits",
-            Icon = Icons.ClaudeMark,
-        },
-    ];
+    public override ICommandItem[] TopLevelCommands() => _profiles.Select(p => (ICommandItem)p.Command).ToArray();
 
-    public override ICommandItem[]? GetDockBands() => [_dockBand.DockItem];
+    public override ICommandItem[]? GetDockBands() => _profiles.Select(p => (ICommandItem)p.DockBand.DockItem).ToArray();
 
-    private async Task RefreshDockAsync()
+    private async Task RefreshAllAsync()
     {
-        await _dockBand.RefreshAsync().ConfigureAwait(false);
+        // Snapshot the list: RebuildProfiles() can swap it out from under a running tick.
+        var profiles = _profiles;
+        await Task.WhenAll(profiles.Select(p => p.DockBand.RefreshAsync())).ConfigureAwait(false);
         RaiseItemsChanged(0);
     }
 
     public override void Dispose()
     {
         _dockRefreshTimer.Dispose();
-        _usageService.Dispose();
+
+        foreach (var profile in _profiles)
+        {
+            profile.Service.Dispose();
+        }
+
         base.Dispose();
     }
+
+    private sealed record ProfileRuntime(UsageProfile Profile, ClaudeUsageService Service, UsageDockBand DockBand, CommandItem Command);
 }

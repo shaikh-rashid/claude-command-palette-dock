@@ -13,13 +13,19 @@ internal sealed class UsageDetailsPage : ContentPage
 {
     private const int BarWidthChars = 20;
     private readonly ClaudeUsageService _usageService;
+    private readonly string _heading;
 
-    public UsageDetailsPage(ClaudeUsageService usageService)
+    public UsageDetailsPage(ClaudeUsageService usageService, UsageProfile profile)
     {
         _usageService = usageService;
-        Id = "claudeusagedock.page.usage";
-        Name = "Claude Usage";
-        Title = "Claude usage";
+        _heading = profile.Label is null ? "Claude usage" : $"Claude usage — {profile.Label}";
+
+        // Keep the default profile's ids/labels exactly as before so existing
+        // users' pinned/added items aren't orphaned by this change.
+        var idSuffix = profile.Label is null ? string.Empty : $".{profile.Id}";
+        Id = $"claudeusagedock.page.usage{idSuffix}";
+        Name = profile.Label is null ? "Claude Usage" : _heading;
+        Title = _heading;
         Icon = Icons.ClaudeMark;
     }
 
@@ -67,12 +73,12 @@ internal sealed class UsageDetailsPage : ContentPage
     {
         if (result.Outcome != UsageFetchOutcome.Success || result.Snapshot is null)
         {
-            return $"# Claude usage\n\n{DescribeFailure(result)}";
+            return $"# {_heading}\n\n{DescribeFailure(result)}";
         }
 
         var snapshot = result.Snapshot;
         var text = new StringBuilder();
-        text.AppendLine("# Claude usage");
+        text.AppendLine($"# {_heading}");
         text.AppendLine();
         text.AppendLine($"Plan: **{snapshot.PlanType}** · last checked {snapshot.RetrievedAt.ToLocalTime():t}");
         text.AppendLine();

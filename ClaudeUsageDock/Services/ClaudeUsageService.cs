@@ -60,7 +60,7 @@ public sealed class ClaudeUsageService : IDisposable
     private static readonly HttpClient SharedHttpClient = new() { Timeout = TimeSpan.FromSeconds(10) };
 
     /// <summary>Local snapshot log backing the burn-rate estimate and weekly sparkline.</summary>
-    public UsageHistoryStore History { get; } = new();
+    public UsageHistoryStore History { get; }
 
     private readonly string _credentialsFilePath;
     private readonly SemaphoreSlim _fetchLock = new(1, 1);
@@ -76,10 +76,25 @@ public sealed class ClaudeUsageService : IDisposable
     /// </summary>
     private StoredCredentials? _memoryCredentials;
 
-    public ClaudeUsageService()
+    /// <param name="credentialsFilePath">
+    /// Overrides where the OAuth token is read from, for monitoring a secondary
+    /// account whose credentials were saved to a different file. Defaults to
+    /// Claude Code's own path.
+    /// </param>
+    /// <param name="historyFileSuffix">Keeps each profile's local usage log separate.</param>
+    public ClaudeUsageService(string? credentialsFilePath = null, string? historyFileSuffix = null)
     {
-        var homeDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        _credentialsFilePath = Path.Combine(homeDirectory, ".claude", ".credentials.json");
+        if (!string.IsNullOrWhiteSpace(credentialsFilePath))
+        {
+            _credentialsFilePath = Environment.ExpandEnvironmentVariables(credentialsFilePath);
+        }
+        else
+        {
+            var homeDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            _credentialsFilePath = Path.Combine(homeDirectory, ".claude", ".credentials.json");
+        }
+
+        History = new UsageHistoryStore(historyFileSuffix);
     }
 
     public async Task<UsageFetchResult> GetSnapshotAsync(bool bypassCache = false)

@@ -19,11 +19,16 @@ public sealed class UsageHistoryStore
     private readonly string _filePath;
     private DateTimeOffset _lastAppend = DateTimeOffset.MinValue;
 
-    public UsageHistoryStore()
+    /// <param name="fileSuffix">
+    /// Distinguishes one profile's history from another's on disk. Null/empty keeps
+    /// the original single-profile filename so existing history isn't orphaned.
+    /// </param>
+    public UsageHistoryStore(string? fileSuffix = null)
     {
         var directory = Utilities.BaseSettingsPath("ClaudeUsageDock");
         Directory.CreateDirectory(directory);
-        _filePath = Path.Combine(directory, "usage-history.csv");
+        var fileName = string.IsNullOrEmpty(fileSuffix) ? "usage-history.csv" : $"usage-history-{fileSuffix}.csv";
+        _filePath = Path.Combine(directory, fileName);
     }
 
     public void Record(ClaudeUsageSnapshot snapshot)

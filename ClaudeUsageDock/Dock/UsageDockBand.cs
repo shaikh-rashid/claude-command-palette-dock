@@ -13,21 +13,31 @@ internal sealed class UsageDockBand
     private readonly ClaudeUsageService _usageService;
     private readonly SettingsManager _settings;
     private readonly ListItem _tile;
+    private readonly string _baseTitle;
+    private readonly string _titleSuffix;
     private bool _appliedLowQuota;
     private bool _lowQuotaNotified;
 
     public WrappedDockItem DockItem { get; }
 
-    public UsageDockBand(ClaudeUsageService usageService, SettingsManager settings, UsageDetailsPage detailsPage)
+    public UsageDockBand(ClaudeUsageService usageService, SettingsManager settings, UsageDetailsPage detailsPage, UsageProfile profile)
     {
         _usageService = usageService;
         _settings = settings;
+        _baseTitle = profile.Label is null ? "Claude usage" : $"Claude usage — {profile.Label}";
+        _titleSuffix = profile.Label is null ? string.Empty : $" — {profile.Label}";
+
         _tile = new ListItem(detailsPage)
         {
-            Title = "Claude usage",
+            Title = _baseTitle,
             Icon = Icons.ClaudeMark,
         };
-        DockItem = new WrappedDockItem([_tile], "claudeusagedock.dock.usage", "Claude Usage");
+
+        // Keep the default profile's dock item id exactly as before so it's not
+        // orphaned in anyone's already-configured Dock.
+        var dockId = profile.Label is null ? "claudeusagedock.dock.usage" : $"claudeusagedock.dock.usage.{profile.Id}";
+        var bandName = profile.Label is null ? "Claude Usage" : $"Claude Usage — {profile.Label}";
+        DockItem = new WrappedDockItem([_tile], dockId, bandName);
     }
 
     public async Task RefreshAsync()
@@ -36,7 +46,7 @@ internal sealed class UsageDockBand
 
         if (result.Outcome != UsageFetchOutcome.Success || result.Snapshot is null)
         {
-            ApplyTile("Claude usage", DescribeFailure(result.Outcome, result.StatusCode), lowOnQuota: false);
+            ApplyTile(_baseTitle, DescribeFailure(result.Outcome, result.StatusCode), lowOnQuota: false);
             return;
         }
 
@@ -56,7 +66,7 @@ internal sealed class UsageDockBand
         _lowQuotaNotified = lowOnQuota;
 
         ApplyTile(
-            title: $"{sessionLeft}% session left",
+            title: $"{sessionLeft}% session left{_titleSuffix}",
             subtitle: $"{weeklyLeft}% week · resets {resetsLocal:t}",
             lowOnQuota: lowOnQuota);
     }

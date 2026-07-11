@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-11
+
+### Added
+
+- Multiple accounts: two additional profiles can be configured from the extension's Settings page (a label and a `.credentials.json` path each — Claude Code itself only keeps one, so these point at files you or a script save separately). Each configured profile gets its own dock tile, its own labeled "Claude Usage Dock" command, and its own local history log, refreshed independently. The default profile's ids, titles, and history filename are unchanged, so existing single-account setups aren't affected.
+
+### Changed
+
+- `ClaudeUsageService` and `UsageHistoryStore` now take the credentials path / history filename as constructor parameters instead of hardcoding Claude Code's default location, so multiple instances can run side by side without clobbering each other's cache, backoff state, or on-disk history.
+
 ## [0.3.0] - 2026-07-11
 
 ### Added
