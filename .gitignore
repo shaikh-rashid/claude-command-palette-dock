@@ -1,0 +1,23 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+*.msix
+*.msixbundle
+
+# Signing material — never commit certificates or private keys
+*.pfx
+*.cer
+elevated-install.ps1
+
+# IDE / tooling
+.vs/
+.vscode/
+*.user
+*.suo
+
+# NuGet
+*.nupkg
+packages/
+
+# Logs & temp
+*.log

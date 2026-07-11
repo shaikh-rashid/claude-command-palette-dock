@@ -1,0 +1,17 @@
+# Normalize line endings; keep Windows-native files CRLF
+* text=auto
+
+*.cs text
+*.csproj text
+*.json text
+*.md text
+*.svg text
+
+*.ps1 text eol=crlf
+*.appxmanifest text eol=crlf
+*.manifest text eol=crlf
+
+*.png binary
+*.pfx binary
+*.cer binary
+*.msix binary
