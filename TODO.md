@@ -37,7 +37,7 @@ Legend: `[ ]` planned · `[~]` in progress · `[x]` done
 - [x] Dock band with live session/weekly percentages and reset time
 - [x] Details page with progress bars for session, weekly, and per-model limits
 - [x] Low-quota alert icon (< 20% session remaining)
-- [x] Opt-in debug logging (`%TEMP%\claude-power-command.debug` flag)
+- [x] Opt-in debug logging (`%TEMP%\claude-usage-dock.debug` flag)
 - [x] `build-and-install.ps1` — publish → pack → sign → sideload → restart CmdPal
 - [x] Git repository, versioning files (VERSION, CHANGELOG, LICENSE), v0.1.0 tag
 - [x] User guide README + INSTALL.md

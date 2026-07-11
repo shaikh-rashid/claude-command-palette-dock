@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using Microsoft.CommandPalette.Extensions;
 
-namespace ClaudePowerCommand;
+namespace ClaudeUsageDock;
 
 [Guid("3d846f79-95c3-4052-b244-2fa775e4601d")]
 public sealed partial class PowerCommandExtension(ManualResetEvent extensionDisposedSignal) : IExtension, IDisposable

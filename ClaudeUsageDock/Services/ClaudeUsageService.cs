@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 
-namespace ClaudePowerCommand.Services;
+namespace ClaudeUsageDock.Services;
 
 public sealed record ModelUsage(string DisplayName, double PercentUsed, DateTimeOffset ResetsAt);
 
@@ -38,7 +38,7 @@ public sealed class ClaudeUsageService : IDisposable
 {
     private const string UsageEndpoint = "https://api.anthropic.com/api/oauth/usage";
     private const string OAuthBetaHeader = "oauth-2025-04-20";
-    private const string ClientUserAgent = "claude-power-command/1.0";
+    private const string ClientUserAgent = "claude-usage-dock/1.0";
     private static readonly TimeSpan CacheLifetime = TimeSpan.FromSeconds(45);
 
     private static readonly HttpClient SharedHttpClient = new() { Timeout = TimeSpan.FromSeconds(10) };

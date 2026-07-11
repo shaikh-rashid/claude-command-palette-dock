@@ -7,8 +7,8 @@
     <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <Platforms>x64</Platforms>
-    <RootNamespace>ClaudePowerCommand</RootNamespace>
-    <AssemblyName>ClaudePowerCommand</AssemblyName>
+    <RootNamespace>ClaudeUsageDock</RootNamespace>
+    <AssemblyName>ClaudeUsageDock</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AppxManifest>$(ProjectDir)Package.appxmanifest</AppxManifest>
     <EnableMsixTooling>true</EnableMsixTooling>

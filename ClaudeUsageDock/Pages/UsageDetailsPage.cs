@@ -1,9 +1,9 @@
 using System.Text;
-using ClaudePowerCommand.Services;
+using ClaudeUsageDock.Services;
 using Microsoft.CommandPalette.Extensions;
 using Microsoft.CommandPalette.Extensions.Toolkit;
 
-namespace ClaudePowerCommand.Pages;
+namespace ClaudeUsageDock.Pages;
 
 /// <summary>
 /// Full-page breakdown shown when the dock tile (or the top-level command) is opened:
@@ -17,7 +17,7 @@ internal sealed class UsageDetailsPage : ContentPage
     public UsageDetailsPage(ClaudeUsageService usageService)
     {
         _usageService = usageService;
-        Id = "claudepowercommand.page.usage";
+        Id = "claudeusagedock.page.usage";
         Name = "Claude Usage";
         Title = "Claude usage";
         Icon = IconHelpers.FromRelativePath("Assets\\icons\\claude-mark.svg");

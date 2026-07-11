@@ -1,8 +1,8 @@
-using ClaudePowerCommand.Pages;
-using ClaudePowerCommand.Services;
+using ClaudeUsageDock.Pages;
+using ClaudeUsageDock.Services;
 using Microsoft.CommandPalette.Extensions.Toolkit;
 
-namespace ClaudePowerCommand.Dock;
+namespace ClaudeUsageDock.Dock;
 
 /// <summary>
 /// The small tile that lives in the Command Palette dock. Clicking it opens
@@ -29,7 +29,7 @@ internal sealed class UsageDockBand
             Icon = IconHelpers.FromRelativePath(NormalIconPath),
         };
         _appliedIconPath = NormalIconPath;
-        DockItem = new WrappedDockItem([_tile], "claudepowercommand.dock.usage", "Claude Usage");
+        DockItem = new WrappedDockItem([_tile], "claudeusagedock.dock.usage", "Claude Usage");
     }
 
     public async Task RefreshAsync()

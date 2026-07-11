@@ -1,10 +1,10 @@
-using ClaudePowerCommand.Dock;
-using ClaudePowerCommand.Pages;
-using ClaudePowerCommand.Services;
+using ClaudeUsageDock.Dock;
+using ClaudeUsageDock.Pages;
+using ClaudeUsageDock.Services;
 using Microsoft.CommandPalette.Extensions;
 using Microsoft.CommandPalette.Extensions.Toolkit;
 
-namespace ClaudePowerCommand;
+namespace ClaudeUsageDock;
 
 public sealed partial class PowerCommandProvider : CommandProvider, IDisposable
 {
@@ -17,8 +17,8 @@ public sealed partial class PowerCommandProvider : CommandProvider, IDisposable
 
     public PowerCommandProvider()
     {
-        Id = "ClaudePowerCommand";
-        DisplayName = "Claude Power Command";
+        Id = "ClaudeUsageDock";
+        DisplayName = "Claude Usage Dock";
         Icon = IconHelpers.FromRelativePath("Assets\\icons\\claude-mark.svg");
 
         _detailsPage = new UsageDetailsPage(_usageService);

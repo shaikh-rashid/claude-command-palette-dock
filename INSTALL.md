@@ -39,7 +39,7 @@ The script:
 
 1. Publishes the .NET project (`dotnet publish`, Release, win-x64).
 2. Stages the MSIX payload (binaries + assets + manifest).
-3. Creates a self-signed development certificate on first run (`CN=ClaudePowerCommand-Dev`).
+3. Creates a self-signed development certificate on first run (`CN=ClaudeUsageDock-Dev`).
 4. Packs and signs the MSIX.
 5. Installs the package. **The first install shows one UAC prompt** — that's Windows trusting the dev certificate; later installs don't need it.
 6. Restarts Command Palette so it picks up the extension.
@@ -65,16 +65,16 @@ The tile shows your 5-hour session percentage remaining and refreshes every 30 s
 |---|---|
 | `dotnet publish failed` / SDK not found | Install the .NET 9 SDK and re-open the terminal so `PATH` updates. |
 | `makeappx.exe / signtool.exe not found` | Install the Windows 10/11 SDK (Visual Studio Installer → Individual components, or standalone). |
-| `Add-AppxPackage` certificate error | Delete `ClaudePowerCommand\bin\*.cer/.pfx`, remove the old cert from `certmgr.msc` (Personal → `ClaudePowerCommand-Dev`), and re-run the script. |
+| `Add-AppxPackage` certificate error | Delete `ClaudeUsageDock\bin\*.cer/.pfx`, remove the old cert from `certmgr.msc` (Personal → `ClaudeUsageDock-Dev`), and re-run the script. |
 | Tile shows "Not signed in to Claude Code" | Sign in to Claude Code (`claude` in a terminal). The token is read from `%USERPROFILE%\.claude\.credentials.json`. |
 | Tile shows "Anthropic API error (401)" | Your token expired — open Claude Code once so it refreshes, or sign in again. |
 | Extension doesn't appear after install | Restart Command Palette: quit `Microsoft.CmdPal.UI` from Task Manager and reopen with `Win+Alt+Space`. |
-| Need diagnostics | `New-Item $env:TEMP\claude-power-command.debug -ItemType File`, reproduce, then read `$env:TEMP\claude-power-command.log`. Token values are never logged. |
+| Need diagnostics | `New-Item $env:TEMP\claude-usage-dock.debug -ItemType File`, reproduce, then read `$env:TEMP\claude-usage-dock.log`. Token values are never logged. |
 
 ## Uninstall
 
 ```powershell
-Get-AppxPackage -Name ClaudePowerCommand | Remove-AppxPackage
+Get-AppxPackage -Name ClaudeUsageDock | Remove-AppxPackage
 ```
 
-Optionally remove the dev certificate: `certmgr.msc` → Personal → Certificates → delete `ClaudePowerCommand-Dev` (and the copy under Trusted People in `certlm.msc`).
+Optionally remove the dev certificate: `certmgr.msc` → Personal → Certificates → delete `ClaudeUsageDock-Dev` (and the copy under Trusted People in `certlm.msc`).

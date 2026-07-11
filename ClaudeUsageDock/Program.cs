@@ -1,6 +1,6 @@
 using JPSoftworks.CommandPalette.Extensions.Toolkit;
 
-namespace ClaudePowerCommand;
+namespace ClaudeUsageDock;
 
 internal static class Program
 {
@@ -11,8 +11,8 @@ internal static class Program
             args,
             new ExtensionHostRunnerParameters
             {
-                PublisherMoniker = "ClaudePowerCommand",
-                ProductMoniker = "ClaudePowerCommand",
+                PublisherMoniker = "ClaudeUsageDock",
+                ProductMoniker = "ClaudeUsageDock",
                 ExtensionFactories = new()
                 {
                     new DelegateExtensionFactory(disposedSignal => new PowerCommandExtension(disposedSignal)),

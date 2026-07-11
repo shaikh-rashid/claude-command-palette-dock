@@ -7,11 +7,11 @@
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   IgnorableNamespaces="uap uap3 com rescap">
 
-  <Identity Name="ClaudePowerCommand" Publisher="CN=ClaudePowerCommand-Dev" Version="0.1.0.0" />
+  <Identity Name="ClaudeUsageDock" Publisher="CN=ClaudeUsageDock-Dev" Version="0.1.0.0" />
 
   <Properties>
-    <DisplayName>Claude Power Command</DisplayName>
-    <PublisherDisplayName>ClaudePowerCommand</PublisherDisplayName>
+    <DisplayName>Claude Usage Dock</DisplayName>
+    <PublisherDisplayName>ClaudeUsageDock</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
@@ -24,9 +24,9 @@
   </Resources>
 
   <Applications>
-    <Application Id="App" Executable="ClaudePowerCommand.exe" EntryPoint="Windows.FullTrustApplication">
+    <Application Id="App" Executable="ClaudeUsageDock.exe" EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="Claude Power Command"
+        DisplayName="Claude Usage Dock"
         Description="Shows live Claude Code subscription usage in the Command Palette dock."
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
@@ -35,17 +35,17 @@
       <Extensions>
         <com:Extension Category="windows.comServer">
           <com:ComServer>
-            <com:ExeServer Executable="ClaudePowerCommand.exe" Arguments="-RegisterProcessAsComServer" DisplayName="Claude Power Command">
-              <com:Class Id="3d846f79-95c3-4052-b244-2fa775e4601d" DisplayName="Claude Power Command" />
+            <com:ExeServer Executable="ClaudeUsageDock.exe" Arguments="-RegisterProcessAsComServer" DisplayName="Claude Usage Dock">
+              <com:Class Id="3d846f79-95c3-4052-b244-2fa775e4601d" DisplayName="Claude Usage Dock" />
             </com:ExeServer>
           </com:ComServer>
         </com:Extension>
         <uap3:Extension Category="windows.appExtension">
           <uap3:AppExtension
             Name="com.microsoft.commandpalette"
-            Id="ClaudePowerCommand"
+            Id="ClaudeUsageDock"
             PublicFolder="Public"
-            DisplayName="Claude Power Command"
+            DisplayName="Claude Usage Dock"
             Description="Live Claude Code usage in the dock">
             <uap3:Properties>
               <CmdPalProvider>

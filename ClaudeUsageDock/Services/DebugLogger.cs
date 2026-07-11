@@ -1,13 +1,13 @@
-namespace ClaudePowerCommand.Services;
+namespace ClaudeUsageDock.Services;
 
 /// <summary>
-/// Opt-in file logger. Silent unless %TEMP%\claude-power-command.debug exists,
+/// Opt-in file logger. Silent unless %TEMP%\claude-usage-dock.debug exists,
 /// so the extension never writes to disk for ordinary users.
 /// </summary>
 internal static class DebugLogger
 {
-    private static readonly string LogFilePath = Path.Combine(Path.GetTempPath(), "claude-power-command.log");
-    private static readonly string EnableFlagPath = Path.Combine(Path.GetTempPath(), "claude-power-command.debug");
+    private static readonly string LogFilePath = Path.Combine(Path.GetTempPath(), "claude-usage-dock.log");
+    private static readonly string EnableFlagPath = Path.Combine(Path.GetTempPath(), "claude-usage-dock.debug");
 
     public static void Log(string message)
     {

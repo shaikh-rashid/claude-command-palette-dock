@@ -1,20 +1,20 @@
-# Builds, packages, signs, and sideloads Claude Power Command into Command Palette.
+# Builds, packages, signs, and sideloads Claude Usage Dock into Command Palette.
 # Re-run this after every code change. The first run elevates once to trust the
 # dev certificate; later runs only prompt if Windows requires it.
 
 $ErrorActionPreference = "Stop"
 
-$projectDir = Join-Path $PSScriptRoot "ClaudePowerCommand"
-$csproj = Join-Path $projectDir "ClaudePowerCommand.csproj"
+$projectDir = Join-Path $PSScriptRoot "ClaudeUsageDock"
+$csproj = Join-Path $projectDir "ClaudeUsageDock.csproj"
 $binDir = Join-Path $projectDir "bin"
 $publishDir = Join-Path $projectDir "bin\Release\net9.0-windows10.0.26100.0\win-x64\publish"
 $stagingDir = Join-Path $binDir "msix-staging"
-$msixPath = Join-Path $binDir "ClaudePowerCommand.msix"
-$certPath = Join-Path $binDir "ClaudePowerCommand.cer"
-$pfxPath = Join-Path $binDir "ClaudePowerCommand.pfx"
-$pfxPassword = "ClaudePowerCommandDev!"
-$certSubject = "CN=ClaudePowerCommand-Dev"
-$packageIdentityName = "ClaudePowerCommand"
+$msixPath = Join-Path $binDir "ClaudeUsageDock.msix"
+$certPath = Join-Path $binDir "ClaudeUsageDock.cer"
+$pfxPath = Join-Path $binDir "ClaudeUsageDock.pfx"
+$pfxPassword = "ClaudeUsageDockDev!"
+$certSubject = "CN=ClaudeUsageDock-Dev"
+$packageIdentityName = "ClaudeUsageDock"
 
 function Find-WindowsKitTool {
     param([Parameter(Mandatory)][string]$ToolName)
@@ -66,7 +66,7 @@ if (-not $cert) {
         -Type CodeSigningCert `
         -Subject $certSubject `
         -KeyUsage DigitalSignature `
-        -FriendlyName "Claude Power Command Dev" `
+        -FriendlyName "Claude Usage Dock Dev" `
         -CertStoreLocation "Cert:\CurrentUser\My" `
         -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3", "2.5.29.19={text}")
 }

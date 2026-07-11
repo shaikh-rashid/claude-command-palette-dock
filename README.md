@@ -53,8 +53,8 @@ Open it by clicking the dock tile or running **Claude usage** from Command Palet
 Logging is off by default. To enable it:
 
 ```powershell
-New-Item $env:TEMP\claude-power-command.debug -ItemType File
-Get-Content $env:TEMP\claude-power-command.log -Tail 50 -Wait
+New-Item $env:TEMP\claude-usage-dock.debug -ItemType File
+Get-Content $env:TEMP\claude-usage-dock.log -Tail 50 -Wait
 ```
 
 Delete the flag file to turn it back off. Token values are never written to the log.
@@ -62,8 +62,8 @@ Delete the flag file to turn it back off. Token values are never written to the 
 ## Project layout
 
 ```
-ClaudePowerCommand/
-  ClaudePowerCommand.csproj
+ClaudeUsageDock/
+  ClaudeUsageDock.csproj
   Program.cs                    entry point (ExtensionHostRunner)
   PowerCommandExtension.cs      IExtension implementation
   PowerCommandProvider.cs       top-level command + dock band wiring, refresh timer
@@ -85,7 +85,7 @@ Planned work and ideas are tracked in [TODO.md](TODO.md). Changes are recorded i
 
 ## Versioning
 
-Semantic versioning. The source of truth is the [VERSION](VERSION) file; keep the four-part `Identity Version` in `ClaudePowerCommand/Package.appxmanifest` in sync when bumping (`MAJOR.MINOR.PATCH.0`).
+Semantic versioning. The source of truth is the [VERSION](VERSION) file; keep the four-part `Identity Version` in `ClaudeUsageDock/Package.appxmanifest` in sync when bumping (`MAJOR.MINOR.PATCH.0`).
 
 ## License
 
