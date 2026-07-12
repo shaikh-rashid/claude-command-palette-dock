@@ -1,14 +1,17 @@
+using System.Globalization;
 using System.Text.Json.Nodes;
 using ClaudeUsageDock.Services;
 using Microsoft.CommandPalette.Extensions;
 using Microsoft.CommandPalette.Extensions.Toolkit;
+using Windows.System;
 
 namespace ClaudeUsageDock.Pages;
 
 /// <summary>
 /// Full-page breakdown shown when the dock tile (or the top-level command) is opened:
 /// session limit, weekly limit, and any per-model weekly limits as bar charts, with
-/// the weekly trend graph alongside them.
+/// the monthly usage heatmap alongside them. Refresh lives in the page's command bar
+/// (Enter / Ctrl+R) and account configuration under More (Ctrl+K).
 /// </summary>
 internal sealed class UsageDetailsPage : ContentPage
 {
@@ -16,7 +19,7 @@ internal sealed class UsageDetailsPage : ContentPage
     private readonly ClaudeUsageService _usageService;
     private readonly string _heading;
 
-    public UsageDetailsPage(ClaudeUsageService usageService, UsageProfile profile)
+    public UsageDetailsPage(ClaudeUsageService usageService, UsageProfile profile, ICommand settingsCommand)
     {
         _usageService = usageService;
         _heading = profile.Label is null ? "Claude usage" : $"Claude usage — {profile.Label}";
@@ -28,6 +31,29 @@ internal sealed class UsageDetailsPage : ContentPage
         Name = profile.Label is null ? "Claude Usage" : _heading;
         Title = _heading;
         Icon = Icons.ClaudeMark;
+
+        Commands =
+        [
+            new CommandContextItem(
+                title: "Refresh",
+                subtitle: string.Empty,
+                name: "Refresh",
+                result: CommandResult.KeepOpen(),
+                action: () =>
+                {
+                    _ = _usageService.GetSnapshotAsync(bypassCache: true).GetAwaiter().GetResult();
+                    RaiseItemsChanged();
+                })
+            {
+                Icon = new IconInfo(""), // Segoe Fluent refresh arrows
+                RequestedShortcut = KeyChordHelpers.FromModifiers(ctrl: true, alt: false, shift: false, win: false, vkey: VirtualKey.R, scanCode: 0),
+            },
+            new CommandContextItem(settingsCommand)
+            {
+                Title = "Configure accounts",
+                Icon = new IconInfo(""), // Segoe Fluent gear
+            },
+        ];
     }
 
     public override IContent[] GetContent()
@@ -45,28 +71,19 @@ internal sealed class UsageDetailsPage : ContentPage
     }
 
     /// <summary>
-    /// The usage card: bars in the left column, the weekly trend graph in the right
+    /// The usage card: bars in the left column, the monthly heatmap in the right
     /// one (an AdaptiveCard ColumnSet — markdown can't put block content side by
-    /// side), and the Refresh action. Submitting re-queries Anthropic past the
-    /// snapshot cache and re-renders the page with the fresh result.
+    /// side). It has no actions: Refresh lives in the page's command bar.
     /// </summary>
     private sealed partial class UsageCardContent : FormContent
     {
-        private readonly UsageDetailsPage _page;
-
         public UsageCardContent(UsageDetailsPage page, ClaudeUsageSnapshot snapshot)
         {
-            _page = page;
             TemplateJson = BuildCardJson(page, snapshot);
             DataJson = "{}";
         }
 
-        public override ICommandResult SubmitForm(string inputs, string data)
-        {
-            _ = _page._usageService.GetSnapshotAsync(bypassCache: true).GetAwaiter().GetResult();
-            _page.RaiseItemsChanged();
-            return CommandResult.KeepOpen();
-        }
+        public override ICommandResult SubmitForm(string inputs, string data) => CommandResult.KeepOpen();
     }
 
     private static string BuildCardJson(UsageDetailsPage page, ClaudeUsageSnapshot snapshot)
@@ -115,7 +132,7 @@ internal sealed class UsageDetailsPage : ContentPage
                     new JsonObject
                     {
                         ["type"] = "TextBlock",
-                        ["text"] = "Past week",
+                        ["text"] = "Past month",
                         ["weight"] = "Bolder",
                     },
                     new JsonObject
@@ -123,7 +140,7 @@ internal sealed class UsageDetailsPage : ContentPage
                         ["type"] = "Image",
                         ["url"] = $"data:image/png;base64,{trend.PngBase64}",
                         ["width"] = $"{TrendChartRenderer.DisplayWidth}px",
-                        ["altText"] = "Heatmap of weekly usage by day and time",
+                        ["altText"] = "Heatmap of daily usage over the past five weeks, with week totals",
                     },
                     new JsonObject
                     {
@@ -131,6 +148,14 @@ internal sealed class UsageDetailsPage : ContentPage
                         ["text"] = trend.Caption,
                         ["isSubtle"] = true,
                         ["size"] = "Small",
+                    },
+                    new JsonObject
+                    {
+                        ["type"] = "TextBlock",
+                        ["text"] = trend.MonthTotal,
+                        ["isSubtle"] = true,
+                        ["size"] = "Small",
+                        ["spacing"] = "None",
                     },
                 },
             });
@@ -147,15 +172,6 @@ internal sealed class UsageDetailsPage : ContentPage
                 {
                     ["type"] = "ColumnSet",
                     ["columns"] = columns,
-                },
-            },
-            ["actions"] = new JsonArray
-            {
-                new JsonObject
-                {
-                    ["type"] = "Action.Submit",
-                    ["title"] = "Refresh",
-                    ["data"] = new JsonObject { ["action"] = "refresh" },
                 },
             },
         };
@@ -222,15 +238,17 @@ internal sealed class UsageDetailsPage : ContentPage
     }
 
     /// <summary>
-    /// Weekly trend graph: a GitHub-style heatmap of when the weekly quota was
-    /// consumed over the past 7 days, from the local history log — weekday rows by
-    /// 3-hour-slot columns, in local time. Each pair of consecutive samples
-    /// attributes the quota burned between them to the slot at their midpoint.
-    /// Null until enough history has accumulated to mean anything.
+    /// Monthly usage heatmap: a GitHub-style calendar of when the weekly quota was
+    /// consumed over the past five Monday-aligned weeks, from the local history log.
+    /// Day cells show daily burn, the WK column shows week totals, and the month
+    /// total goes in the second caption line — day, week, and month usage in one
+    /// graphic. Each pair of consecutive samples attributes the quota burned
+    /// between them to the local calendar day at their midpoint. Null until enough
+    /// history has accumulated to mean anything.
     /// </summary>
-    private (string PngBase64, string Caption)? BuildTrendGraph()
+    private (string PngBase64, string Caption, string MonthTotal)? BuildTrendGraph()
     {
-        var points = _usageService.History.Load(TimeSpan.FromDays(7));
+        var points = _usageService.History.Load(TimeSpan.FromDays(36));
         if (points.Count < 3)
         {
             return null;
@@ -243,7 +261,24 @@ internal sealed class UsageDetailsPage : ContentPage
             return null;
         }
 
-        var cells = new double[TrendChartRenderer.Rows, TrendChartRenderer.Columns];
+        var today = DateTimeOffset.Now.Date;
+        var currentMonday = today.AddDays(-(((int)today.DayOfWeek + 6) % 7)); // DayOfWeek starts on Sunday; the grid starts on Monday
+        var startMonday = currentMonday.AddDays(-7 * (TrendChartRenderer.WeekRows - 1));
+
+        var dayCells = new double[TrendChartRenderer.WeekRows, TrendChartRenderer.DayColumns];
+        var weekTotals = new double[TrendChartRenderer.WeekRows];
+        for (var row = 0; row < TrendChartRenderer.WeekRows; row++)
+        {
+            for (var col = 0; col < TrendChartRenderer.DayColumns; col++)
+            {
+                if (startMonday.AddDays(row * 7 + col) > today)
+                {
+                    dayCells[row, col] = TrendChartRenderer.NotApplicable;
+                }
+            }
+        }
+
+        var monthTotal = 0.0;
         for (var i = 1; i < points.Count; i++)
         {
             var burned = points[i - 1].WeeklyRemainingPercent - points[i].WeeklyRemainingPercent;
@@ -252,16 +287,35 @@ internal sealed class UsageDetailsPage : ContentPage
                 continue; // Idle, or the weekly limit reset between samples.
             }
 
-            var midpoint = (points[i - 1].Timestamp + (points[i].Timestamp - points[i - 1].Timestamp) / 2).ToLocalTime();
-            var row = ((int)midpoint.DayOfWeek + 6) % 7; // DayOfWeek starts on Sunday; the grid starts on Monday
-            cells[row, midpoint.Hour / 3] += burned;
+            var midpoint = (points[i - 1].Timestamp + (points[i].Timestamp - points[i - 1].Timestamp) / 2).ToLocalTime().Date;
+            var dayIndex = (midpoint - startMonday).Days;
+            if (dayIndex < 0 || dayIndex >= TrendChartRenderer.WeekRows * TrendChartRenderer.DayColumns)
+            {
+                continue;
+            }
+
+            dayCells[dayIndex / 7, dayIndex % 7] += burned;
+            weekTotals[dayIndex / 7] += burned;
+            monthTotal += burned;
         }
 
-        var png = TrendChartRenderer.Render(cells);
-        var caption = span >= TimeSpan.FromDays(6.5)
-            ? "usage over the past week"
+        // Month labels where a month begins (and on the first row), GitHub style.
+        // Invariant culture keeps the abbreviations inside the renderer's typeface.
+        var rowLabels = new string?[TrendChartRenderer.WeekRows];
+        for (var row = 0; row < TrendChartRenderer.WeekRows; row++)
+        {
+            var monday = startMonday.AddDays(row * 7);
+            if (row == 0 || monday.Month != startMonday.AddDays((row - 1) * 7).Month)
+            {
+                rowLabels[row] = monday.ToString("MMM", CultureInfo.InvariantCulture).ToUpperInvariant();
+            }
+        }
+
+        var png = TrendChartRenderer.Render(dayCells, weekTotals, rowLabels);
+        var caption = span >= TimeSpan.FromDays(27)
+            ? "usage over the past month"
             : $"usage since {first.ToLocalTime():MMM d}";
-        return (Convert.ToBase64String(png), caption);
+        return (Convert.ToBase64String(png), caption, $"month ≈ {monthTotal:F0}% of one week's quota");
     }
 
     private static string DescribeFailure(UsageFetchResult result) => result.Outcome switch

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-07-12
+
+### Changed
+
+- The heatmap now covers the past month instead of the past week, laid out as a GitHub-style calendar: five Monday-aligned week rows by weekday columns (headed M T W T F S S), month labels where a month begins, a separated WK column of week totals, and a month-total line under the caption — day, week, and month usage in one graphic. Days that haven't happened yet aren't drawn. History retention grew from 8 to 36 days to feed it (the log stays local and prunes itself).
+- The Refresh button moved out of the usage card into the page's command bar, like native Command Palette pages: primary command on Enter with a Ctrl+R shortcut. A "Configure accounts" entry (the extension's settings page) now sits in the More menu (Ctrl+K).
+
 ## [0.7.0] - 2026-07-12
 
 ### Changed

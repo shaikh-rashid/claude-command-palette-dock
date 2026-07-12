@@ -68,7 +68,7 @@ public sealed partial class PowerCommandProvider : CommandProvider, IDisposable
     private ProfileRuntime CreateRuntime(UsageProfile profile)
     {
         var service = new ClaudeUsageService(profile.CredentialsFilePath, profile.HistorySuffix);
-        var detailsPage = new UsageDetailsPage(service, profile);
+        var detailsPage = new UsageDetailsPage(service, profile, _settingsManager.Settings.SettingsPage);
         var dockBand = new UsageDockBand(service, _settingsManager, detailsPage, profile);
         var command = new CommandItem(detailsPage)
         {

@@ -9,10 +9,10 @@ Inspired by [omgapnt/ClaudeUsage](https://github.com/omgapnt/ClaudeUsage).
 ## ✨ Features
 
 - **Dock tile** — live 5-hour session percentage remaining, with the weekly percentage and session reset time in the subtitle. Refreshes every 30 seconds by default (configurable from 15 s to 5 min).
-- **Details page** — click the tile (or run the `Claude Usage Dock` command) for a full breakdown: session limit, 7-day all-model limit, and per-model weekly limits, each with a progress bar and reset time, plus a Refresh button.
+- **Details page** — click the tile (or run the `Claude Usage Dock` command) for a full breakdown: session limit, 7-day all-model limit, and per-model weekly limits, each with a progress bar and reset time. Refresh from the command bar (Enter or Ctrl+R); account configuration is under More (Ctrl+K).
 - **Low-quota alert** — the tile icon gains a red alert badge when the session drops below a configurable threshold (20% by default), and a Windows toast notification fires the first time it crosses (can be turned off).
 - **Burn-rate estimate** — the details page projects when your session hits 0% at the current pace, based on a rolling local snapshot log.
-- **Weekly trend graph** — a GitHub-style heatmap of when you used Claude over the past 7 days (weekday rows × 3-hour columns), rendered beside the progress bars on the details page. History stays on your machine.
+- **Monthly usage heatmap** — a GitHub-style calendar of the past five weeks beside the progress bars on the details page: day cells, a week-totals column, and a month total, so day, week, and month usage read from one graphic. History stays on your machine.
 - **Token auto-refresh** — when the stored Claude Code token expires, the extension refreshes it itself (and writes it back for Claude Code), so the tile keeps working overnight.
 - **Multiple accounts** — monitor up to two additional Claude accounts by pointing extra profiles at separately saved credential files, each with its own dock tile, command, and history.
 - **Settings** — refresh interval, alert threshold, toast notifications, and additional account profiles are editable from the extension's Settings page in Command Palette.
@@ -57,9 +57,9 @@ Open it by clicking the dock tile or running **Claude Usage Dock** from Command 
 
 - Your **plan type** (read from Claude Code's local credentials) and when the data was last checked.
 - **5-hour session** — your current session window and when it resets, with a projection of when it runs out at your current pace (shown once ~15 minutes of history exists).
-- **7-day (all models)** — the weekly cap across every model. Once enough history has accumulated (~6 hours), a GitHub-style usage heatmap appears beside the bars showing when during the week the quota was spent.
+- **7-day (all models)** — the weekly cap across every model. Once enough history has accumulated (~6 hours), a GitHub-style monthly heatmap appears beside the bars: one cell per day over five Monday-aligned weeks, a WK column of week totals, and a month-total line underneath.
 - **7-day per model** — individual weekly caps (e.g. Opus), when your plan has them.
-- A **Refresh** button to re-query immediately, bypassing the snapshot cache.
+- A **Refresh** command in the bottom command bar (Enter or Ctrl+R) to re-query immediately, bypassing the snapshot cache, and a **Configure accounts** entry under More (Ctrl+K) that opens the extension's settings.
 
 ### 👥 Multiple accounts
 
@@ -90,7 +90,7 @@ ClaudeUsageDock/
   Services/
     ClaudeUsageService.cs       credentials + token refresh, Anthropic usage API client
     UsageHistoryStore.cs        rolling local snapshot log (burn rate + trend graph)
-    TrendChartRenderer.cs       GitHub-style weekly usage heatmap PNG (no drawing-library deps)
+    TrendChartRenderer.cs       GitHub-style monthly usage heatmap PNG (no drawing-library deps)
     SettingsManager.cs          user settings (interval, threshold, toasts)
     ToastNotifier.cs            low-quota Windows notification
     DebugLogger.cs              opt-in file logging
