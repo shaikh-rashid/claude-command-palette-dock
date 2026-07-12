@@ -12,12 +12,20 @@ Legend: `[ ]` planned · `[~]` in progress · `[x]` done
 
 ## ⏭️ Next
 
-(nothing queued — pull from Ideas)
+- [ ] WinGet / Microsoft Store distribution
+- [ ] Localize strings (en → more languages)
 
 ## 💡 Ideas
 
-- [ ] WinGet / Microsoft Store distribution
-- [ ] Localize strings (en → more languages)
+- [ ] Weekly burn projection: extend the session burn-rate estimate to the 7-day cap ("at this pace you'll hit the weekly limit Thursday evening"), since the history log already has everything needed
+- [ ] Weekly & per-model alerts: today the toast only fires on the session threshold — add opt-in alerts for the 7-day cap and per-model caps (e.g. Opus), each with its own threshold
+- [ ] Configurable dock tile metric: let the tile title show session %, weekly %, or time-to-reset instead of the fixed session-first layout
+- [ ] Update notifier: check the GitLab/GitHub Releases feed on a slow cadence and show a subtle "v0.8.0 available" line on the details page (respecting the no-telemetry stance — a plain HTTPS GET, off by default?)
+- [ ] Usage statistics page: daily totals, busiest day/slot, current streak, and week-over-week comparison computed from the history log — a natural companion command to the details page
+- [ ] Export / open history: a command that reveals `usage-history.csv` (or copies a JSON export) for people who want to chart their own data
+- [ ] Quiet hours: suppress toasts during configured hours (e.g. overnight) while the tile keeps updating
+- [ ] Longer history window: make retention configurable (up to ~30 days) and let the heatmap aggregate multiple weeks once the data exists (closer to the real GitHub graph)
+- [ ] PR/MR build check: a CI job that compiles the extension on pushes and merge requests, so a broken build is caught before a release tag (today only security checks run there)
 
 ## ✅ Done
 
