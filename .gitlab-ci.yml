@@ -1,4 +1,12 @@
-# Signed release publishing on GitLab, mirroring .github/workflows/release.yml.
+# Two pipelines in one file:
+#
+#   - Security checks (test stage) on default-branch pushes and merge requests,
+#     mirroring .github/workflows/security.yml: GitLab's built-in Secret
+#     Detection (gitleaks under the hood, full-history scan) plus a NuGet
+#     vulnerability audit.
+#
+#   - Signed release publishing on vX.Y.Z tags, mirroring
+#     .github/workflows/release.yml.
 #
 # GitLab Releases can't have files attached directly the way GitHub Releases
 # can — files first go to the project's generic package registry, then the
@@ -18,12 +26,46 @@
 # self-hosted instance, replace that tag with your own Windows runner's tag.
 
 stages:
+  - test
   - build
   - release
 
 workflow:
   rules:
     - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# Secret Detection is available on every GitLab tier. It defines the
+# `secret_detection` job (test stage), which runs on branch/MR pipelines and
+# skips tag pipelines on its own. The historic flag scans the whole history,
+# not just the pushed range — this repo is small, so it stays fast.
+include:
+  - template: Security/Secret-Detection.gitlab-ci.yml
+
+variables:
+  SECRET_DETECTION_HISTORIC_SCAN: "true"
+
+# Same audit as the GitHub workflow. Restoring the net9.0-windows TFM works on
+# a Linux SDK image because the Windows targeting pack comes from NuGet; if
+# that ever stops being true, move this job to the Windows runner pool.
+dependency_audit:
+  stage: test
+  image: mcr.microsoft.com/dotnet/sdk:9.0
+  tags:
+    - saas-linux-small-amd64
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  script:
+    - dotnet restore ClaudeUsageDock/ClaudeUsageDock.csproj
+    - |
+      output=$(dotnet list ClaudeUsageDock/ClaudeUsageDock.csproj package --vulnerable --include-transitive)
+      echo "$output"
+      if echo "$output" | grep -q "has the following vulnerable packages"; then
+        echo "Vulnerable NuGet packages found — update them (see output above)." >&2
+        exit 1
+      fi
 
 build_and_sign:
   stage: build

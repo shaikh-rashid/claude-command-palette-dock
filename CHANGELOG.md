@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-07-12
+
+### Added
+
+- Security checks in CI on both platforms, running on pushes to `main` and on PRs/MRs: a full-history secret scan (gitleaks via the new `.github/workflows/security.yml` on GitHub; GitLab's built-in Secret Detection template on GitLab) and a `dotnet list package --vulnerable --include-transitive` NuGet audit. The GitHub audit also runs on a weekly schedule so advisories published between pushes still surface. The GitLab pipeline now runs on default-branch and merge-request pipelines in addition to release tags. Both checks verified locally: 11 commits scanned with no leaks, no vulnerable packages.
+
 ## [0.6.0] - 2026-07-12
 
 ### Changed

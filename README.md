@@ -103,8 +103,9 @@ scripts/
   BuildTools.ps1                 shared publish/stage/pack/sign helpers (dev + CI)
   ci-build-release.ps1            CI-only: builds and signs the release MSIX
   generate-release-cert.ps1       one-time: creates the persistent release signing cert
-.gitlab-ci.yml                  primary: builds, signs, and publishes a GitLab Release on tag push
-.github/workflows/release.yml   mirror: same, as a GitHub Release
+.gitlab-ci.yml                  primary: security checks on main/MRs + signed GitLab Release on tag push
+.github/workflows/release.yml   mirror: signed GitHub Release on tag push
+.github/workflows/security.yml  mirror: secret scan (gitleaks) + NuGet vulnerability audit
 build-and-install.ps1           publish -> MSIX pack -> sign -> sideload (local dev)
 global.json                     pins the .NET SDK version
 ```

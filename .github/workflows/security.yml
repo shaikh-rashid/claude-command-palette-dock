@@ -1,0 +1,58 @@
+# Security checks, mirrored by the test stage in .gitlab-ci.yml:
+#   - gitleaks scans the full git history for committed secrets. The repo's
+#     dev-only MSIX signing password ("ClaudeUsageDockDev!") is deliberately
+#     public and does not trip the default rules — verified locally.
+#   - dotnet list package --vulnerable audits NuGet dependencies (including
+#     transitive ones) against the GitHub Advisory Database. The weekly run
+#     catches advisories published after the last push.
+#
+# gitleaks-action needs no license key for personal-account repos; if this repo
+# ever moves into an organization, add a GITLEAKS_LICENSE secret.
+
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 6 * * 1" # Mondays 06:17 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  secret-scan:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history, so old commits are scanned too
+
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependency-audit:
+    name: Vulnerable NuGet packages
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore ClaudeUsageDock/ClaudeUsageDock.csproj
+
+      - name: Audit dependencies
+        shell: pwsh
+        run: |
+          $output = dotnet list ClaudeUsageDock/ClaudeUsageDock.csproj package --vulnerable --include-transitive
+          $output | Write-Host
+          if ($LASTEXITCODE -ne 0) { throw "dotnet list package failed (exit $LASTEXITCODE)" }
+          if ($output -match "has the following vulnerable packages") {
+            throw "Vulnerable NuGet packages found - update them (see output above)."
+          }

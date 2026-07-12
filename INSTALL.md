@@ -106,6 +106,8 @@ Optionally remove the dev certificate: `certmgr.msc` → Personal → Certificat
 
 Two CI pipelines build, pack, and sign the MSIX and publish a Release whenever a `vX.Y.Z` tag is pushed — GitLab (`.gitlab-ci.yml`, primary) and GitHub (`.github/workflows/release.yml`, mirror). Both consume the same signing certificate, so a release looks identical either place.
 
+Both platforms also run security checks on pushes to `main` and on PRs/MRs: a full-history secret scan (gitleaks via `.github/workflows/security.yml` on GitHub, the built-in Secret Detection template on GitLab) and a `dotnet list package --vulnerable --include-transitive` audit of NuGet dependencies. The GitHub workflow additionally runs the audit weekly, so advisories published between pushes still surface. Neither check needs any secrets or a paid tier.
+
 One-time setup, before the first automated release:
 
 1. Run `.\scripts\generate-release-cert.ps1` locally. It creates a persistent self-signed certificate (`CN=ClaudeUsageDock-Release`) and prints a base64-encoded `.pfx` and a generated password.
