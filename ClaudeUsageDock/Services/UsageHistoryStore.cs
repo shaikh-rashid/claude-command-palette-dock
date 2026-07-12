@@ -7,7 +7,7 @@ public sealed record UsagePoint(DateTimeOffset Timestamp, double SessionRemainin
 
 /// <summary>
 /// Rolling local log of usage snapshots (CSV: unix-ms,session%,weekly%). Backs the
-/// burn-rate estimate and the weekly sparkline. Data never leaves the machine.
+/// burn-rate estimate and the weekly trend graph. Data never leaves the machine.
 /// </summary>
 public sealed class UsageHistoryStore
 {

@@ -59,7 +59,7 @@ public sealed class ClaudeUsageService : IDisposable
 
     private static readonly HttpClient SharedHttpClient = new() { Timeout = TimeSpan.FromSeconds(10) };
 
-    /// <summary>Local snapshot log backing the burn-rate estimate and weekly sparkline.</summary>
+    /// <summary>Local snapshot log backing the burn-rate estimate and weekly trend graph.</summary>
     public UsageHistoryStore History { get; }
 
     private readonly string _credentialsFilePath;

@@ -1,4 +1,4 @@
-using System.Text;
+using System.Text.Json.Nodes;
 using ClaudeUsageDock.Services;
 using Microsoft.CommandPalette.Extensions;
 using Microsoft.CommandPalette.Extensions.Toolkit;
@@ -7,11 +7,12 @@ namespace ClaudeUsageDock.Pages;
 
 /// <summary>
 /// Full-page breakdown shown when the dock tile (or the top-level command) is opened:
-/// session limit, weekly limit, and any per-model weekly limits, each as a bar chart.
+/// session limit, weekly limit, and any per-model weekly limits as bar charts, with
+/// the weekly trend graph alongside them.
 /// </summary>
 internal sealed class UsageDetailsPage : ContentPage
 {
-    private const int BarWidthChars = 20;
+    private const int BarWidthChars = 16;
     private readonly ClaudeUsageService _usageService;
     private readonly string _heading;
 
@@ -33,31 +34,30 @@ internal sealed class UsageDetailsPage : ContentPage
     {
         var result = _usageService.GetSnapshotAsync(bypassCache: false).GetAwaiter().GetResult();
 
-        return [new MarkdownContent(Render(result)), new RefreshFormContent(this)];
+        if (result.Outcome != UsageFetchOutcome.Success || result.Snapshot is null)
+        {
+            return [new MarkdownContent($"# {_heading}\n\n{DescribeFailure(result)}")];
+        }
+
+        var snapshot = result.Snapshot;
+        var header = $"# {_heading}\n\nPlan: **{snapshot.PlanType}** · last checked {snapshot.RetrievedAt.ToLocalTime():t}";
+        return [new MarkdownContent(header), new UsageCardContent(this, snapshot)];
     }
 
     /// <summary>
-    /// The Refresh button. Submitting re-queries Anthropic past the snapshot cache
-    /// and re-renders the page with the fresh result.
+    /// The usage card: bars in the left column, the weekly trend graph in the right
+    /// one (an AdaptiveCard ColumnSet — markdown can't put block content side by
+    /// side), and the Refresh action. Submitting re-queries Anthropic past the
+    /// snapshot cache and re-renders the page with the fresh result.
     /// </summary>
-    private sealed partial class RefreshFormContent : FormContent
+    private sealed partial class UsageCardContent : FormContent
     {
         private readonly UsageDetailsPage _page;
 
-        public RefreshFormContent(UsageDetailsPage page)
+        public UsageCardContent(UsageDetailsPage page, ClaudeUsageSnapshot snapshot)
         {
             _page = page;
-            TemplateJson = """
-            {
-              "type": "AdaptiveCard",
-              "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-              "version": "1.5",
-              "body": [],
-              "actions": [
-                { "type": "Action.Submit", "title": "Refresh", "data": { "action": "refresh" } }
-              ]
-            }
-            """;
+            TemplateJson = BuildCardJson(page, snapshot);
             DataJson = "{}";
         }
 
@@ -69,40 +69,134 @@ internal sealed class UsageDetailsPage : ContentPage
         }
     }
 
-    private string Render(UsageFetchResult result)
+    private static string BuildCardJson(UsageDetailsPage page, ClaudeUsageSnapshot snapshot)
     {
-        if (result.Outcome != UsageFetchOutcome.Success || result.Snapshot is null)
+        var bars = new JsonArray();
+        AddBar(bars, "5-hour session", snapshot.SessionRemainingPercent, snapshot.SessionResetsAt, first: true);
+        if (page.DescribeBurnRate(snapshot) is { } burnNote)
         {
-            return $"# {_heading}\n\n{DescribeFailure(result)}";
+            bars.Add(new JsonObject
+            {
+                ["type"] = "TextBlock",
+                ["text"] = burnNote,
+                ["isSubtle"] = true,
+                ["size"] = "Small",
+                ["wrap"] = true,
+                ["spacing"] = "Small",
+            });
         }
 
-        var snapshot = result.Snapshot;
-        var text = new StringBuilder();
-        text.AppendLine($"# {_heading}");
-        text.AppendLine();
-        text.AppendLine($"Plan: **{snapshot.PlanType}** · last checked {snapshot.RetrievedAt.ToLocalTime():t}");
-        text.AppendLine();
-
-        AppendBar(text, "5-hour session", snapshot.SessionRemainingPercent, snapshot.SessionResetsAt);
-        AppendBurnEstimate(text, snapshot);
-        AppendBar(text, "7-day (all models)", snapshot.WeeklyRemainingPercent, snapshot.WeeklyResetsAt);
-        AppendWeeklySparkline(text);
-
+        AddBar(bars, "7-day (all models)", snapshot.WeeklyRemainingPercent, snapshot.WeeklyResetsAt);
         foreach (var model in snapshot.PerModelWeekly)
         {
-            AppendBar(text, $"7-day — {model.DisplayName}", 100 - model.PercentUsed, model.ResetsAt);
+            AddBar(bars, $"7-day — {model.DisplayName}", 100 - model.PercentUsed, model.ResetsAt);
         }
 
-        return text.ToString();
+        var columns = new JsonArray
+        {
+            new JsonObject
+            {
+                ["type"] = "Column",
+                ["width"] = "stretch",
+                ["items"] = bars,
+            },
+        };
+
+        if (page.BuildTrendGraph() is { } trend)
+        {
+            columns.Add(new JsonObject
+            {
+                ["type"] = "Column",
+                ["width"] = "auto",
+                ["spacing"] = "Large",
+                ["verticalContentAlignment"] = "Center",
+                ["items"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["type"] = "TextBlock",
+                        ["text"] = "Past week",
+                        ["weight"] = "Bolder",
+                    },
+                    new JsonObject
+                    {
+                        ["type"] = "Image",
+                        ["url"] = $"data:image/png;base64,{trend.PngBase64}",
+                        ["width"] = $"{TrendGraphWidth}px",
+                        ["altText"] = "Area chart of weekly usage",
+                    },
+                    new JsonObject
+                    {
+                        ["type"] = "TextBlock",
+                        ["text"] = trend.Caption,
+                        ["isSubtle"] = true,
+                        ["size"] = "Small",
+                    },
+                },
+            });
+        }
+
+        var card = new JsonObject
+        {
+            ["type"] = "AdaptiveCard",
+            ["$schema"] = "http://adaptivecards.io/schemas/adaptive-card.json",
+            ["version"] = "1.5",
+            ["body"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["type"] = "ColumnSet",
+                    ["columns"] = columns,
+                },
+            },
+            ["actions"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["type"] = "Action.Submit",
+                    ["title"] = "Refresh",
+                    ["data"] = new JsonObject { ["action"] = "refresh" },
+                },
+            },
+        };
+
+        return card.ToJsonString();
+    }
+
+    private static void AddBar(JsonArray bars, string label, double remainingPercent, DateTimeOffset resetsAt, bool first = false)
+    {
+        var remaining = (int)Math.Round(Math.Clamp(remainingPercent, 0, 100));
+        var filledChars = Math.Clamp(remaining * BarWidthChars / 100, 0, BarWidthChars);
+        var bar = new string('▰', filledChars) + new string('▱', BarWidthChars - filledChars);
+
+        bars.Add(new JsonObject
+        {
+            ["type"] = "TextBlock",
+            ["text"] = label,
+            ["weight"] = "Bolder",
+            ["wrap"] = true,
+            ["spacing"] = first ? "None" : "Medium",
+        });
+        bars.Add(new JsonObject
+        {
+            ["type"] = "RichTextBlock",
+            ["spacing"] = "Small",
+            ["inlines"] = new JsonArray
+            {
+                new JsonObject { ["type"] = "TextRun", ["text"] = bar, ["fontType"] = "Monospace" },
+                new JsonObject { ["type"] = "TextRun", ["text"] = $" {remaining}% left", ["weight"] = "Bolder" },
+                new JsonObject { ["type"] = "TextRun", ["text"] = $" · resets {resetsAt.ToLocalTime():t}", ["isSubtle"] = true },
+            },
+        });
     }
 
     /// <summary>Projects when the session hits 0% from the last ~90 minutes of samples.</summary>
-    private void AppendBurnEstimate(StringBuilder text, ClaudeUsageSnapshot snapshot)
+    private string? DescribeBurnRate(ClaudeUsageSnapshot snapshot)
     {
         var points = _usageService.History.Load(TimeSpan.FromMinutes(90));
         if (points.Count < 2)
         {
-            return;
+            return null;
         }
 
         var oldest = points[0];
@@ -110,74 +204,80 @@ internal sealed class UsageDetailsPage : ContentPage
         var elapsedHours = (newest.Timestamp - oldest.Timestamp).TotalHours;
         if (elapsedHours < 0.25)
         {
-            return; // Not enough spread to say anything credible.
+            return null; // Not enough spread to say anything credible.
         }
 
         var burnPerHour = (oldest.SessionRemainingPercent - newest.SessionRemainingPercent) / elapsedHours;
         if (burnPerHour < 1)
         {
-            return; // Flat or recovering — an estimate would be noise.
+            return null; // Flat or recovering — an estimate would be noise.
         }
 
         var hoursLeft = snapshot.SessionRemainingPercent / burnPerHour;
         var emptyAt = DateTimeOffset.UtcNow.AddHours(hoursLeft);
 
-        text.AppendLine(emptyAt >= snapshot.SessionResetsAt
-            ? "*At the current pace, your session lasts until it resets.*"
-            : $"*At the current pace (≈{burnPerHour:F0}%/h), the session runs out around {emptyAt.ToLocalTime():t}.*");
-        text.AppendLine();
+        return emptyAt >= snapshot.SessionResetsAt
+            ? "At the current pace, your session lasts until it resets."
+            : $"At the current pace (≈{burnPerHour:F0}%/h), the session runs out around {emptyAt.ToLocalTime():t}.";
     }
 
-    /// <summary>Sparkline of weekly usage (used %, 6-hour buckets over the past 7 days).</summary>
-    private void AppendWeeklySparkline(StringBuilder text)
+    private const int TrendGraphWidth = 240;
+    private const int TrendGraphHeight = 100;
+
+    /// <summary>
+    /// Weekly trend graph: usage % over the past 7 days from the local history log,
+    /// averaged into ~half-hour-to-2-hour buckets and rendered as a PNG area chart.
+    /// Null until enough history has accumulated to mean anything.
+    /// </summary>
+    private (string PngBase64, string Caption)? BuildTrendGraph()
     {
-        const int BucketCount = 28;
-        var window = TimeSpan.FromDays(7);
-        var points = _usageService.History.Load(window);
+        var points = _usageService.History.Load(TimeSpan.FromDays(7));
         if (points.Count < 3)
         {
-            return;
+            return null;
         }
 
-        var start = DateTimeOffset.UtcNow - window;
-        var bucketLength = TimeSpan.FromTicks(window.Ticks / BucketCount);
-        var levels = "▁▂▃▄▅▆▇█";
-        var line = new StringBuilder(BucketCount);
-        var filledBuckets = 0;
-
-        for (var i = 0; i < BucketCount; i++)
+        var first = points[0].Timestamp;
+        var span = points[^1].Timestamp - first;
+        if (span < TimeSpan.FromHours(6))
         {
-            var bucketEnd = start + bucketLength * (i + 1);
-            var sample = points.LastOrDefault(p => p.Timestamp < bucketEnd && p.Timestamp >= bucketEnd - bucketLength);
-            if (sample is null)
-            {
-                line.Append('·');
-                continue;
-            }
-
-            var usedPercent = Math.Clamp(100 - sample.WeeklyRemainingPercent, 0, 100);
-            line.Append(levels[Math.Min((int)(usedPercent / 100 * levels.Length), levels.Length - 1)]);
-            filledBuckets++;
+            return null;
         }
 
-        if (filledBuckets < 3)
+        // Average samples into buckets so the line shows the trend, not poll noise.
+        var bucketCount = (int)Math.Clamp(span.TotalMinutes / 30, 12, 84);
+        var sums = new double[bucketCount];
+        var counts = new int[bucketCount];
+        foreach (var point in points)
         {
-            return; // Sparkline needs a little history before it means anything.
+            var index = Math.Min((int)((point.Timestamp - first).Ticks * bucketCount / span.Ticks), bucketCount - 1);
+            sums[index] += Math.Clamp(100 - point.WeeklyRemainingPercent, 0, 100);
+            counts[index]++;
         }
 
-        text.AppendLine($"`{line}` *usage over the past week*");
-        text.AppendLine();
-    }
+        var averages = Enumerable.Range(0, bucketCount)
+            .Where(i => counts[i] > 0)
+            .Select(i => (X: (i + 0.5) / bucketCount, Used: sums[i] / counts[i]))
+            .ToList();
+        if (averages.Count < 2)
+        {
+            return null;
+        }
 
-    private void AppendBar(StringBuilder text, string label, double remainingPercent, DateTimeOffset resetsAt)
-    {
-        var remaining = (int)Math.Round(Math.Clamp(remainingPercent, 0, 100));
-        var filledChars = Math.Clamp(remaining * BarWidthChars / 100, 0, BarWidthChars);
-        var bar = new string('▰', filledChars) + new string('▱', BarWidthChars - filledChars);
+        // Zero baseline, headroom above the peak so the line never kisses the frame.
+        var yMax = Math.Max(10, averages.Max(a => a.Used) * 1.15);
+        var normalized = averages.Select(a => (a.X, a.Used / yMax)).ToList();
 
-        text.AppendLine($"### {label}");
-        text.AppendLine($"`{bar}` **{remaining}%** left · resets {resetsAt.ToLocalTime():t}");
-        text.AppendLine();
+        var png = TrendChartRenderer.Render(normalized, TrendGraphWidth, TrendGraphHeight);
+        if (png is null)
+        {
+            return null;
+        }
+
+        var caption = span >= TimeSpan.FromDays(6.5)
+            ? "usage over the past week"
+            : $"usage since {first.ToLocalTime():MMM d}";
+        return (Convert.ToBase64String(png), caption);
     }
 
     private static string DescribeFailure(UsageFetchResult result) => result.Outcome switch

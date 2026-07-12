@@ -12,7 +12,7 @@ Inspired by [omgapnt/ClaudeUsage](https://github.com/omgapnt/ClaudeUsage).
 - **Details page** — click the tile (or run the `Claude Usage Dock` command) for a full breakdown: session limit, 7-day all-model limit, and per-model weekly limits, each with a progress bar and reset time, plus a Refresh button.
 - **Low-quota alert** — the tile icon gains a red alert badge when the session drops below a configurable threshold (20% by default), and a Windows toast notification fires the first time it crosses (can be turned off).
 - **Burn-rate estimate** — the details page projects when your session hits 0% at the current pace, based on a rolling local snapshot log.
-- **Weekly sparkline** — a 7-day usage trend chart on the details page. History stays on your machine.
+- **Weekly trend graph** — a 7-day usage area chart rendered beside the progress bars on the details page. History stays on your machine.
 - **Token auto-refresh** — when the stored Claude Code token expires, the extension refreshes it itself (and writes it back for Claude Code), so the tile keeps working overnight.
 - **Multiple accounts** — monitor up to two additional Claude accounts by pointing extra profiles at separately saved credential files, each with its own dock tile, command, and history.
 - **Settings** — refresh interval, alert threshold, toast notifications, and additional account profiles are editable from the extension's Settings page in Command Palette.
@@ -57,7 +57,7 @@ Open it by clicking the dock tile or running **Claude Usage Dock** from Command 
 
 - Your **plan type** (read from Claude Code's local credentials) and when the data was last checked.
 - **5-hour session** — your current session window and when it resets, with a projection of when it runs out at your current pace (shown once ~15 minutes of history exists).
-- **7-day (all models)** — the weekly cap across every model, with a 7-day usage sparkline once enough history has accumulated.
+- **7-day (all models)** — the weekly cap across every model. Once enough history has accumulated (~6 hours), a 7-day usage area chart appears beside the bars.
 - **7-day per model** — individual weekly caps (e.g. Opus), when your plan has them.
 - A **Refresh** button to re-query immediately, bypassing the snapshot cache.
 
@@ -89,14 +89,15 @@ ClaudeUsageDock/
   Icons.cs                      themed (light/dark) sunburst icons
   Services/
     ClaudeUsageService.cs       credentials + token refresh, Anthropic usage API client
-    UsageHistoryStore.cs        rolling local snapshot log (burn rate + sparkline)
+    UsageHistoryStore.cs        rolling local snapshot log (burn rate + trend graph)
+    TrendChartRenderer.cs       weekly usage PNG area chart (no drawing-library deps)
     SettingsManager.cs          user settings (interval, threshold, toasts)
     ToastNotifier.cs            low-quota Windows notification
     DebugLogger.cs              opt-in file logging
   Dock/
     UsageDockBand.cs            the dock tile (title/subtitle/icon per refresh)
   Pages/
-    UsageDetailsPage.cs         full stats page: progress bars, estimate, sparkline
+    UsageDetailsPage.cs         full stats page: progress bars, estimate, trend graph
   Assets/                       app tile logos + status icons
 scripts/
   BuildTools.ps1                 shared publish/stage/pack/sign helpers (dev + CI)

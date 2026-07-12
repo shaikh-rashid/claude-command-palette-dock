@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-07-12
+
+### Changed
+
+- The weekly usage trend on the details page is now a real area chart (dark panel, teal fill, cyan line) instead of a unicode sparkline, and it sits beside the usage bars instead of underneath them. The chart is rasterized in-process to a PNG (new `TrendChartRenderer`, no drawing-library dependency) and embedded as a data URI in the page's AdaptiveCard; the bars, burn-rate note, and Refresh button moved into the same card so the two-column layout works. It appears once ~6 hours of history has accumulated and is captioned "usage since …" until a full week is logged.
+
 ## [0.5.1] - 2026-07-11
 
 ### Added
