@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-07-11
+
+### Added
+
+- GitLab is now the primary repository (`git@gitlab.com:shaikh.rashid/claude-command-palette-dock.git`), with GitHub kept as a mirror. `origin` is configured with two push URLs (GitLab + GitHub), so a single `git push origin` updates both.
+- `.gitlab-ci.yml`: builds, packs, and signs the MSIX on a `vX.Y.Z` tag push, same as the GitHub workflow, but as a two-stage pipeline — a Windows job (GitLab.com shared runner) does the build and uploads artifacts to the project's generic package registry, then a Linux job creates the actual GitLab Release referencing those files. GitLab Releases can't have files attached directly the way GitHub's can, hence the two stages.
+
+### Changed
+
+- Both release pipelines now require the signing certificate secret to be set independently — GitHub repo secrets and GitLab CI/CD variables don't share storage. Documented in INSTALL.md's "Publishing a release" section.
+
 ## [0.5.0] - 2026-07-11
 
 ### Added

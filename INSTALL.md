@@ -4,7 +4,7 @@ This guide covers two ways to install **Claude Power Command Extension**: downlo
 
 ## 🚀 Option A: Install a prebuilt release
 
-1. Go to the [Releases page](../../releases) and download `ClaudeUsageDock.msix` and `ClaudeUsageDock-Release.cer` from the latest release.
+1. Go to the Releases page — primary: [GitLab](https://gitlab.com/shaikh.rashid/claude-command-palette-dock/-/releases); mirror: [GitHub](https://github.com/shaikh-rashid/claude-command-palette-dock/releases) — and download `ClaudeUsageDock.msix` and `ClaudeUsageDock-Release.cer` from the latest release. Both mirrors are signed with the same certificate.
 2. Trust the certificate (one-time, requires admin — Windows won't install an MSIX signed by an untrusted certificate):
 
    ```powershell
@@ -46,7 +46,7 @@ winget install Microsoft.WindowsSDK.10.0.26100   # must match the csproj's Targe
 ### 2. 📥 Get the source
 
 ```powershell
-git clone <repository-url>
+git clone git@gitlab.com:shaikh.rashid/claude-command-palette-dock.git
 cd "Claude Power Command Extension"
 ```
 
@@ -104,18 +104,23 @@ Optionally remove the dev certificate: `certmgr.msc` → Personal → Certificat
 
 ## 📦 Publishing a release (maintainers)
 
-CI (`.github/workflows/release.yml`) builds, packs, and signs the MSIX and attaches it to a GitHub Release whenever a `vX.Y.Z` tag is pushed — that's how the Option A download above gets produced.
+Two CI pipelines build, pack, and sign the MSIX and publish a Release whenever a `vX.Y.Z` tag is pushed — GitLab (`.gitlab-ci.yml`, primary) and GitHub (`.github/workflows/release.yml`, mirror). Both consume the same signing certificate, so a release looks identical either place.
 
 One-time setup, before the first automated release:
 
 1. Run `.\scripts\generate-release-cert.ps1` locally. It creates a persistent self-signed certificate (`CN=ClaudeUsageDock-Release`) and prints a base64-encoded `.pfx` and a generated password.
-2. Add both as GitHub repo secrets (**Settings → Secrets and variables → Actions**): `RELEASE_PFX_BASE64` and `RELEASE_PFX_PASSWORD`. Delete the local base64 file afterward — it contains the private key.
+2. Add both values in **both** places:
+   - GitHub: **Settings → Secrets and variables → Actions** → new repository secrets `RELEASE_PFX_BASE64` and `RELEASE_PFX_PASSWORD`.
+   - GitLab: **Settings → CI/CD → Variables** → new variables `RELEASE_PFX_BASE64` and `RELEASE_PFX_PASSWORD`, both marked **Masked** (and **Protected** if release tags are protected).
+3. Delete the local base64 file afterward — it contains the private key.
 
-Every release after that reuses the same certificate, so anyone who trusted it once (Option A, step 2) never needs to re-trust it for a later update. Rotating the certificate is possible by re-running the script and updating the secrets, but it forces every existing user to re-trust the new one — avoid unless the old key is compromised.
+Every release after that reuses the same certificate, so anyone who trusted it once (Option A, step 2) never needs to re-trust it for a later update, on either mirror. Rotating the certificate is possible by re-running the script and updating both sets of variables, but it forces every existing user to re-trust the new one — avoid unless the old key is compromised.
 
-To ship a release: bump `VERSION` and the `Identity Version` in `ClaudeUsageDock/Package.appxmanifest` to match, add a section to `CHANGELOG.md` for that version (the workflow copies it into the release notes verbatim — it'll fail the build if it's missing), commit, then tag and push:
+To ship a release: bump `VERSION` and the `Identity Version` in `ClaudeUsageDock/Package.appxmanifest` to match, add a section to `CHANGELOG.md` for that version (both pipelines copy it into the release notes verbatim — they fail the build if it's missing), commit, then tag and push:
 
 ```powershell
 git tag -a v0.5.0 -m "v0.5.0 — ..."
 git push origin v0.5.0
 ```
+
+`origin` is GitLab (primary) and is configured with a second push URL for GitHub, so a single `git push origin` pushes to both — no need to push to each separately. Run `git remote -v` to see the current push URLs.

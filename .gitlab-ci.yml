@@ -1,0 +1,104 @@
+# Signed release publishing on GitLab, mirroring .github/workflows/release.yml.
+#
+# GitLab Releases can't have files attached directly the way GitHub Releases
+# can — files first go to the project's generic package registry, then the
+# Release references them by URL. That's why this is two jobs instead of one:
+# `build_and_sign` needs a Windows runner (makeappx.exe/signtool.exe, and a
+# windows10.0.26100.0 dotnet publish target); `create_release` just talks to
+# the GitLab API and runs fine on the default Linux shared runner.
+#
+# One-time setup before the first tag push:
+#   1. Run scripts/generate-release-cert.ps1 locally.
+#   2. Add its two printed values as CI/CD variables (Settings -> CI/CD ->
+#      Variables): RELEASE_PFX_BASE64 and RELEASE_PFX_PASSWORD. Mark both
+#      "Masked" (and "Protected" if release tags are protected).
+#
+# Uses GitLab.com's shared Windows runner pool (tag: saas-windows-medium-amd64).
+# If your plan doesn't include Windows runner minutes, or you're on a
+# self-hosted instance, replace that tag with your own Windows runner's tag.
+
+stages:
+  - build
+  - release
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
+
+build_and_sign:
+  stage: build
+  tags:
+    - saas-windows-medium-amd64
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
+  variables:
+    PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/release-assets/${CI_COMMIT_TAG}"
+  script:
+    - |
+      $ErrorActionPreference = "Stop"
+
+      $version = $env:CI_COMMIT_TAG.TrimStart('v')
+      $fileVersion = (Get-Content VERSION -Raw).Trim()
+      if ($version -ne $fileVersion) {
+        throw "Tag $env:CI_COMMIT_TAG (version $version) does not match the VERSION file ($fileVersion). Bump VERSION and Package.appxmanifest before tagging a release."
+      }
+
+      # Install the .NET SDK pinned in global.json — GitLab's shared Windows
+      # runners don't reliably ship a matching preinstalled version.
+      Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile "$env:CI_PROJECT_DIR\dotnet-install.ps1"
+      & "$env:CI_PROJECT_DIR\dotnet-install.ps1" -JsonFile global.json -InstallDir "$env:CI_PROJECT_DIR\.dotnet"
+      $env:PATH = "$env:CI_PROJECT_DIR\.dotnet;$env:PATH"
+
+      . .\scripts\BuildTools.ps1
+      Assert-WindowsSdkPlatform -PlatformVersion "10.0.26100.0"
+
+      $bytes = [Convert]::FromBase64String($env:RELEASE_PFX_BASE64)
+      $pfxPath = Join-Path $env:CI_PROJECT_DIR "release.pfx"
+      [IO.File]::WriteAllBytes($pfxPath, $bytes)
+
+      .\scripts\ci-build-release.ps1 -PfxPath $pfxPath -PfxPassword $env:RELEASE_PFX_PASSWORD -OutputDir release-output
+
+      Remove-Item $pfxPath -Force
+
+      # Changelog section for this version becomes the release description.
+      $lines = Get-Content CHANGELOG.md
+      $startMatch = $lines | Select-String -Pattern "^## \[$([regex]::Escape($version))\]" | Select-Object -First 1
+      if (-not $startMatch) { throw "No CHANGELOG.md section found for version $version — add one before releasing." }
+      $rest = $lines[$startMatch.LineNumber..($lines.Count - 1)]
+      $nextHeading = $rest | Select-String -Pattern "^## \[" | Select-Object -First 1
+      $section = if ($nextHeading) { $rest[0..($nextHeading.LineNumber - 2)] } else { $rest }
+      $section -join "`n" | Out-File -FilePath release-notes.md -Encoding utf8
+
+      # Upload both artifacts to the generic package registry so the release
+      # job (a different runner) can link to them.
+      $headers = @{ "JOB-TOKEN" = $env:CI_JOB_TOKEN }
+      Invoke-WebRequest -Uri "$env:PACKAGE_REGISTRY_URL/ClaudeUsageDock.msix" -Method Put -Headers $headers -InFile "release-output\ClaudeUsageDock.msix"
+      Invoke-WebRequest -Uri "$env:PACKAGE_REGISTRY_URL/ClaudeUsageDock-Release.cer" -Method Put -Headers $headers -InFile "release-output\ClaudeUsageDock-Release.cer"
+  artifacts:
+    paths:
+      - release-output/
+      - release-notes.md
+    expire_in: 1 week
+
+create_release:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  tags:
+    - saas-linux-small-amd64
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
+  needs:
+    - job: build_and_sign
+      artifacts: true
+  script:
+    - echo "Creating release for $CI_COMMIT_TAG"
+  release:
+    tag_name: $CI_COMMIT_TAG
+    name: "ClaudeUsageDock $CI_COMMIT_TAG"
+    description: release-notes.md
+    assets:
+      links:
+        - name: "ClaudeUsageDock.msix"
+          url: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/release-assets/${CI_COMMIT_TAG}/ClaudeUsageDock.msix"
+        - name: "ClaudeUsageDock-Release.cer"
+          url: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/release-assets/${CI_COMMIT_TAG}/ClaudeUsageDock-Release.cer"

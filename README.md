@@ -23,12 +23,12 @@ Inspired by [omgapnt/ClaudeUsage](https://github.com/omgapnt/ClaudeUsage).
 
 See **[INSTALL.md](INSTALL.md)** for full step-by-step instructions, troubleshooting, and uninstall.
 
-**Fastest path — no SDKs needed:** download `ClaudeUsageDock.msix` and `ClaudeUsageDock-Release.cer` from the [Releases page](../../releases), trust the certificate once, then `Add-AppxPackage`. Full steps in INSTALL.md.
+**Fastest path — no SDKs needed:** download `ClaudeUsageDock.msix` and `ClaudeUsageDock-Release.cer` from the Releases page (primary: [GitLab](https://gitlab.com/shaikh.rashid/claude-command-palette-dock/-/releases); mirror: [GitHub](https://github.com/shaikh-rashid/claude-command-palette-dock/releases)), trust the certificate once, then `Add-AppxPackage`. Full steps in INSTALL.md.
 
 **From source:**
 
 ```powershell
-git clone <repository-url>
+git clone git@gitlab.com:shaikh.rashid/claude-command-palette-dock.git
 cd "Claude Power Command Extension"
 .\build-and-install.ps1
 ```
@@ -102,7 +102,8 @@ scripts/
   BuildTools.ps1                 shared publish/stage/pack/sign helpers (dev + CI)
   ci-build-release.ps1            CI-only: builds and signs the release MSIX
   generate-release-cert.ps1       one-time: creates the persistent release signing cert
-.github/workflows/release.yml   builds, signs, and publishes a GitHub Release on tag push
+.gitlab-ci.yml                  primary: builds, signs, and publishes a GitLab Release on tag push
+.github/workflows/release.yml   mirror: same, as a GitHub Release
 build-and-install.ps1           publish -> MSIX pack -> sign -> sideload (local dev)
 global.json                     pins the .NET SDK version
 ```
