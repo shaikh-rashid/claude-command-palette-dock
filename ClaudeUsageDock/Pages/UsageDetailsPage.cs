@@ -122,8 +122,8 @@ internal sealed class UsageDetailsPage : ContentPage
                     {
                         ["type"] = "Image",
                         ["url"] = $"data:image/png;base64,{trend.PngBase64}",
-                        ["width"] = $"{TrendGraphWidth}px",
-                        ["altText"] = "Area chart of weekly usage",
+                        ["width"] = $"{TrendChartRenderer.DisplayWidth}px",
+                        ["altText"] = "Heatmap of weekly usage by day and time",
                     },
                     new JsonObject
                     {
@@ -221,12 +221,11 @@ internal sealed class UsageDetailsPage : ContentPage
             : $"At the current pace (≈{burnPerHour:F0}%/h), the session runs out around {emptyAt.ToLocalTime():t}.";
     }
 
-    private const int TrendGraphWidth = 240;
-    private const int TrendGraphHeight = 100;
-
     /// <summary>
-    /// Weekly trend graph: usage % over the past 7 days from the local history log,
-    /// averaged into ~half-hour-to-2-hour buckets and rendered as a PNG area chart.
+    /// Weekly trend graph: a GitHub-style heatmap of when the weekly quota was
+    /// consumed over the past 7 days, from the local history log — weekday rows by
+    /// 3-hour-slot columns, in local time. Each pair of consecutive samples
+    /// attributes the quota burned between them to the slot at their midpoint.
     /// Null until enough history has accumulated to mean anything.
     /// </summary>
     private (string PngBase64, string Caption)? BuildTrendGraph()
@@ -244,36 +243,21 @@ internal sealed class UsageDetailsPage : ContentPage
             return null;
         }
 
-        // Average samples into buckets so the line shows the trend, not poll noise.
-        var bucketCount = (int)Math.Clamp(span.TotalMinutes / 30, 12, 84);
-        var sums = new double[bucketCount];
-        var counts = new int[bucketCount];
-        foreach (var point in points)
+        var cells = new double[TrendChartRenderer.Rows, TrendChartRenderer.Columns];
+        for (var i = 1; i < points.Count; i++)
         {
-            var index = Math.Min((int)((point.Timestamp - first).Ticks * bucketCount / span.Ticks), bucketCount - 1);
-            sums[index] += Math.Clamp(100 - point.WeeklyRemainingPercent, 0, 100);
-            counts[index]++;
+            var burned = points[i - 1].WeeklyRemainingPercent - points[i].WeeklyRemainingPercent;
+            if (burned <= 0)
+            {
+                continue; // Idle, or the weekly limit reset between samples.
+            }
+
+            var midpoint = (points[i - 1].Timestamp + (points[i].Timestamp - points[i - 1].Timestamp) / 2).ToLocalTime();
+            var row = ((int)midpoint.DayOfWeek + 6) % 7; // DayOfWeek starts on Sunday; the grid starts on Monday
+            cells[row, midpoint.Hour / 3] += burned;
         }
 
-        var averages = Enumerable.Range(0, bucketCount)
-            .Where(i => counts[i] > 0)
-            .Select(i => (X: (i + 0.5) / bucketCount, Used: sums[i] / counts[i]))
-            .ToList();
-        if (averages.Count < 2)
-        {
-            return null;
-        }
-
-        // Zero baseline, headroom above the peak so the line never kisses the frame.
-        var yMax = Math.Max(10, averages.Max(a => a.Used) * 1.15);
-        var normalized = averages.Select(a => (a.X, a.Used / yMax)).ToList();
-
-        var png = TrendChartRenderer.Render(normalized, TrendGraphWidth, TrendGraphHeight);
-        if (png is null)
-        {
-            return null;
-        }
-
+        var png = TrendChartRenderer.Render(cells);
         var caption = span >= TimeSpan.FromDays(6.5)
             ? "usage over the past week"
             : $"usage since {first.ToLocalTime():MMM d}";

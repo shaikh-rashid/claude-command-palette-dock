@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-07-12
+
+### Changed
+
+- The weekly trend graph is now a GitHub-style contribution heatmap instead of an area chart, in the same navy/teal/cyan scheme: weekday rows (labeled M/W/F) by 3-hour-slot columns (labeled 06/12/18, local time), with rounded cells stepping through a four-level teal→cyan intensity ramp relative to the busiest slot. Cell values are the share of the weekly quota burned in that slot, attributed from consecutive history samples, so the graph shows *when* you use Claude rather than the cumulative used-percent curve.
+
 ## [0.6.1] - 2026-07-12
 
 ### Added
