@@ -17,18 +17,18 @@ Legend: `[ ]` planned · `[~]` in progress · `[x]` done
 
 ## 💡 Ideas
 
-- [ ] Weekly burn projection: extend the session burn-rate estimate to the 7-day cap ("at this pace you'll hit the weekly limit Thursday evening"), since the history log already has everything needed
 - [ ] Weekly & per-model alerts: today the toast only fires on the session threshold — add opt-in alerts for the 7-day cap and per-model caps (e.g. Opus), each with its own threshold
 - [ ] Configurable dock tile metric: let the tile title show session %, weekly %, or time-to-reset instead of the fixed session-first layout
 - [ ] Update notifier: check the GitLab/GitHub Releases feed on a slow cadence and show a subtle "v0.8.0 available" line on the details page (respecting the no-telemetry stance — a plain HTTPS GET, off by default?)
-- [ ] Usage statistics page: daily totals, busiest day/slot, current streak, and week-over-week comparison computed from the history log — a natural companion command to the details page
+- [ ] More Breakdown statistics: current streak and week-over-week comparison from the history log (daily totals, busiest slot, and pace projection shipped in the v0.9.0 Breakdown tab)
 - [ ] Export / open history: a command that reveals `usage-history.csv` (or copies a JSON export) for people who want to chart their own data
 - [ ] Quiet hours: suppress toasts during configured hours (e.g. overnight) while the tile keeps updating
-- [ ] Longer history window: make retention configurable (up to ~30 days) and let the heatmap aggregate multiple weeks once the data exists (closer to the real GitHub graph)
+- [ ] Configurable history retention (the fixed 36-day window already feeds the monthly heatmap; make it user-tunable for people who want more or less kept on disk)
 - [ ] PR/MR build check: a CI job that compiles the extension on pushes and merge requests, so a broken build is caught before a release tag (today only security checks run there)
 
 ## ✅ Done
 
+- [x] Tabbed details page (Usage / Breakdown / Heatmap): Usage keeps the bars (now full-width, relative reset times, account facts); Breakdown adds what's-using-your-limits stats from the history log (last-24h burn, daily average, busiest period, weekly pace projection, per-model caps) plus the weekly time-of-day heatmap; Heatmap brings back v0.8.0's monthly GitHub-style calendar without displacing the weekly view. Tab strip is Action.Submit buttons since AdaptiveCards has no native tabs (v0.9.0)
 - [x] Reverted the heatmap to the weekly design from v0.7.0 (weekday rows × 3-hour columns) — the monthly calendar layout didn't look as good; kept v0.8.0's command-bar Refresh, Configure-accounts entry, and 36-day retention (v0.8.1)
 - [x] Monthly usage heatmap: the graph now covers five Monday-aligned weeks as a GitHub-style calendar — day cells, month labels (JUN/JUL) at month starts, a separated WK week-totals column, and a month-total caption line, so day/week/month usage read from one graphic; history retention extended 8 → 36 days. Refresh moved from a card button to the page command bar (Enter / Ctrl+R) and "Configure accounts" (settings page) added to the More menu (Ctrl+K) (v0.8.0)
 - [x] Restyled the weekly trend graph as a GitHub-style contribution heatmap in the existing navy/teal/cyan scheme: weekday rows (M/W/F labels) × 3-hour columns (06/12/18 labels, local time), rounded cells, four-step teal→cyan intensity ramp relative to the busiest slot; cells show when the weekly quota was burned. Labels come from a tiny built-in 5×5 pixel font, still no drawing-library deps (v0.7.0)
