@@ -46,9 +46,14 @@ include:
 variables:
   SECRET_DETECTION_HISTORIC_SCAN: "true"
 
-# Same audit as the GitHub workflow. Restoring the net9.0-windows TFM works on
-# a Linux SDK image because the Windows targeting pack comes from NuGet; if
-# that ever stops being true, move this job to the Windows runner pool.
+# Same audit as the GitHub workflow. Restoring a net9.0-windows-TFM project on a
+# non-Windows SDK needs EnableWindowsTargeting=true (NETSDK1100 otherwise) — it
+# lets restore/list resolve the Windows targeting pack from NuGet without
+# actually requiring a Windows build. `dotnet list package` doesn't accept -p:
+# MSBuild property overrides, so this is set as an env var instead — MSBuild
+# reads an environment variable as the property's value when nothing else sets
+# it, and that works for both dotnet subcommands. Verified locally in the same
+# mcr.microsoft.com/dotnet/sdk:9.0 image CI uses.
 dependency_audit:
   stage: test
   image: mcr.microsoft.com/dotnet/sdk:9.0
@@ -57,6 +62,8 @@ dependency_audit:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  variables:
+    EnableWindowsTargeting: "true"
   script:
     - dotnet restore ClaudeUsageDock/ClaudeUsageDock.csproj
     - |

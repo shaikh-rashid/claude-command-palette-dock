@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- The GitLab `dependency_audit` job failed with NETSDK1100: restoring a `net9.0-windows`-TFM project on the job's Linux SDK image requires `EnableWindowsTargeting=true`. It's now set as a job-level variable (an environment variable) rather than a `-p:` flag, because `dotnet list package` doesn't accept MSBuild property arguments while MSBuild does pick the property up from the environment for both commands. Reproduced and verified end-to-end in the same `mcr.microsoft.com/dotnet/sdk:9.0` image CI uses: restore succeeds and the audit reports no vulnerable packages.
+
 ## [0.8.2] - 2026-07-12
 
 ### Fixed
