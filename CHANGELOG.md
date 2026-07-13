@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-07-12
+
+### Fixed
+
+- Release CI failed at the signing step with `SignTool Error: An unexpected internal error has occurred.` — signtool refuses to sign an MSIX whose manifest `Identity Publisher` (`CN=ClaudeUsageDock-Dev`, the dev sideload publisher) differs from the signing certificate's subject (`CN=ClaudeUsageDock-Release`). The CI build now patches the staged `AppxManifest.xml` publisher to the certificate's subject before packing; the manifest in the repo keeps the dev publisher for local `build-and-install.ps1` sideloads. Reproduced and the fix verified end-to-end locally with a simulated release certificate.
+- The CI signing step no longer swallows signtool's stdout, which contained the actual `SignerSign() failed (0x8007000b)` diagnostic; the release script also validates the PFX and password up front (clear error instead of a generic one, before spending build time) and logs the signing subject and thumbprint.
+
 ## [0.8.1] - 2026-07-12
 
 ### Changed
