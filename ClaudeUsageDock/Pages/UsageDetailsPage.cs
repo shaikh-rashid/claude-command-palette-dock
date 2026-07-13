@@ -26,9 +26,6 @@ namespace ClaudeUsageDock.Pages;
 /// </summary>
 internal sealed class UsageDetailsPage : ContentPage
 {
-    /// <summary>Width of each unicode progress bar; the bars own the row now that the heatmap has its own tab.</summary>
-    private const int BarWidthChars = 24;
-
     private const string TabUsage = "usage";
     private const string TabBreakdown = "breakdown";
     private const string TabHeatmap = "heatmap";
@@ -200,71 +197,103 @@ internal sealed class UsageDetailsPage : ContentPage
     /// </summary>
     private void AppendUsageSection(JsonArray body, ClaudeUsageSnapshot snapshot)
     {
-        AddBar(body, "5-hour session", snapshot.SessionRemainingPercent, snapshot.SessionResetsAt);
+        AddBar(body, "5-hour limit", 100 - snapshot.SessionRemainingPercent, snapshot.SessionResetsAt);
         if (DescribeBurnRate(snapshot) is { } burnNote)
         {
             body.Add(SubtleText(burnNote, spacing: "Small"));
         }
 
-        AddBar(body, "7-day (all models)", snapshot.WeeklyRemainingPercent, snapshot.WeeklyResetsAt);
+        AddBar(body, "Weekly · all models", 100 - snapshot.WeeklyRemainingPercent, snapshot.WeeklyResetsAt);
         foreach (var model in snapshot.PerModelWeekly)
         {
-            AddBar(body, $"7-day — {model.DisplayName}", 100 - model.PercentUsed, model.ResetsAt);
+            AddBar(body, $"Weekly · {model.DisplayName}", model.PercentUsed, model.ResetsAt);
         }
     }
 
     /// <summary>
-    /// One labeled progress bar: a bold label TextBlock, then a RichTextBlock
-    /// mixing a monospace unicode bar with proportional text (an AdaptiveCard
-    /// TextBlock can't change fonts mid-line).
+    /// One usage row: bold label on the left, subtle reset time and bold percent
+    /// used on the right, and underneath a thin rendered progress bar whose color
+    /// shifts as usage approaches the limit.
     /// </summary>
-    private static void AddBar(JsonArray body, string label, double remainingPercent, DateTimeOffset resetsAt)
+    private static void AddBar(JsonArray body, string label, double usedPercent, DateTimeOffset resetsAt)
     {
-        var remaining = (int)Math.Round(Math.Clamp(remainingPercent, 0, 100));
-        var filledChars = Math.Clamp(remaining * BarWidthChars / 100, 0, BarWidthChars);
-        var bar = new string('▰', filledChars) + new string('▱', BarWidthChars - filledChars);
+        var used = (int)Math.Round(Math.Clamp(usedPercent, 0, 100));
 
         body.Add(new JsonObject
         {
-            ["type"] = "TextBlock",
-            ["text"] = label,
-            ["weight"] = "Bolder",
-            ["wrap"] = true,
+            ["type"] = "ColumnSet",
             ["spacing"] = "Medium",
+            ["columns"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["type"] = "Column",
+                    ["width"] = "stretch",
+                    ["verticalContentAlignment"] = "Bottom",
+                    ["items"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["type"] = "TextBlock",
+                            ["text"] = label,
+                            ["weight"] = "Bolder",
+                        },
+                    },
+                },
+                new JsonObject
+                {
+                    ["type"] = "Column",
+                    ["width"] = "auto",
+                    ["verticalContentAlignment"] = "Bottom",
+                    ["items"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["type"] = "RichTextBlock",
+                            ["horizontalAlignment"] = "Right",
+                            ["inlines"] = new JsonArray
+                            {
+                                new JsonObject { ["type"] = "TextRun", ["text"] = FormatReset(resetsAt), ["isSubtle"] = true },
+                                new JsonObject { ["type"] = "TextRun", ["text"] = $"  {used}%", ["weight"] = "Bolder" },
+                            },
+                        },
+                    },
+                },
+            },
         });
         body.Add(new JsonObject
         {
-            ["type"] = "RichTextBlock",
+            ["type"] = "Image",
+            ["url"] = $"data:image/png;base64,{Convert.ToBase64String(BarRenderer.Render(used))}",
+            ["width"] = $"{BarRenderer.DisplayWidth}px",
+            ["altText"] = $"{label}: {used}% used",
             ["spacing"] = "Small",
-            ["inlines"] = new JsonArray
-            {
-                new JsonObject { ["type"] = "TextRun", ["text"] = bar, ["fontType"] = "Monospace" },
-                new JsonObject { ["type"] = "TextRun", ["text"] = $" {remaining}% left", ["weight"] = "Bolder" },
-                new JsonObject { ["type"] = "TextRun", ["text"] = $" · {FormatResetsIn(resetsAt)}", ["isSubtle"] = true },
-            },
         });
     }
 
-    /// <summary>"resets in 3 h 05 m" — relative like the reference UI, coarser as the horizon grows.</summary>
-    private static string FormatResetsIn(DateTimeOffset resetsAt)
+    /// <summary>
+    /// "Resets in 4 hr 39 min" while it's less than a day away, otherwise the
+    /// concrete moment ("Resets Sat 2:00 PM") — matching the reference UI.
+    /// </summary>
+    private static string FormatReset(DateTimeOffset resetsAt)
     {
         var delta = resetsAt - DateTimeOffset.UtcNow;
         if (delta <= TimeSpan.Zero)
         {
-            return "resets soon";
+            return "Resets soon";
         }
 
         if (delta < TimeSpan.FromHours(1))
         {
-            return $"resets in {Math.Max(1, delta.Minutes)} min";
+            return $"Resets in {Math.Max(1, (int)delta.TotalMinutes)} min";
         }
 
         if (delta < TimeSpan.FromDays(1))
         {
-            return $"resets in {(int)delta.TotalHours} h {delta.Minutes:D2} m";
+            return $"Resets in {(int)delta.TotalHours} hr {delta.Minutes} min";
         }
 
-        return $"resets in {(int)delta.TotalDays} d {delta.Hours} h";
+        return $"Resets {resetsAt.ToLocalTime():ddd h:mm tt}";
     }
 
     /// <summary>Projects when the session hits 0% from the last ~90 minutes of samples.</summary>
@@ -352,7 +381,7 @@ internal sealed class UsageDetailsPage : ContentPage
             });
             foreach (var model in snapshot.PerModelWeekly)
             {
-                body.Add(SubtleText($"{model.DisplayName} — {model.PercentUsed:F0}% used · {FormatResetsIn(model.ResetsAt)}", spacing: "Small"));
+                body.Add(SubtleText($"{model.DisplayName} — {model.PercentUsed:F0}% used · {FormatReset(model.ResetsAt)}", spacing: "Small"));
             }
         }
     }

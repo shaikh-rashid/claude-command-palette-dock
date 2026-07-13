@@ -10,9 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - The details page is now organized as three tabbed sections, switched by a button strip at the top of the card (AdaptiveCards has no native tab control, so the strip is three submit buttons and a switch re-renders the page):
-  - **Usage** — just the limit bars (session, weekly, per-model) with the burn-rate note, now full-width and showing relative reset times ("resets in 3 h 05 m"); plan and last-checked stay in the page header only.
+  - **Usage** — limit rows restyled after Claude Code's own usage panel: bold label left, subtle reset time and bold percent-used right ("Resets in 4 hr 39 min  31%", or "Resets Sat 2:00 PM" when more than a day out), and a thin rounded progress bar underneath whose color shifts blue → amber (≥75% used) → red (≥90%) as the limit approaches. The burn-rate note stays under the session row; plan and last-checked stay in the page header only.
   - **Breakdown** — "What's using your limits?", derived from the local history log: weekly-quota burn over the last 24 h, daily average, busiest weekday/3-hour period, a pace projection for the weekly cap ("runs out around Thu 6 PM" / "lasts until it resets"), and the per-model weekly caps.
   - **Heatmap** — the monthly GitHub-style calendar heatmap returns from v0.8.0, redrawn to fill its tab (roughly double the cell size) and with a LESS→MORE color legend: five Monday-aligned week rows × weekday columns headed M T W T F S S, month labels where a month starts, a separated WK week-totals column, and a month-total line.
+
+### Changed
+
+- The progress bars are rendered PNGs now (a `BarRenderer` alongside the heatmap renderer) instead of unicode block glyphs — AdaptiveCards has no colorable progress element. The shared pixel primitives (fills, supersample downscaling, PNG encoding) moved into a common `Rasterizer` helper both renderers use.
 
 ### Removed
 
