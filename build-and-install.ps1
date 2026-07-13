@@ -55,10 +55,21 @@ Set-MsixSignature -MsixPath $msixPath -PfxPath $pfxPath -PfxPassword $pfxPasswor
 Write-Host "[5/5] Install"
 $expectedVersion = ([xml](Get-Content (Join-Path $projectDir "Package.appxmanifest"))).Package.Identity.Version
 $existingPackage = Get-AppxPackage -Name $packageIdentityName -ErrorAction SilentlyContinue
+$localStateBackupDir = $null
 if ($existingPackage -and $existingPackage.Version -eq $expectedVersion) {
     # Reinstalling the same version with different contents fails with 0x80073CFB,
     # which happens constantly while iterating without a version bump. Remove first.
+    # Unlike a version-bump upgrade (which Windows applies in place, keeping app
+    # data), Remove-AppxPackage is a full uninstall that deletes LocalState —
+    # wiping the usage history the Breakdown/Heatmap tabs depend on. Back it up
+    # and restore it after reinstalling so local history survives dev iteration.
     Write-Host "Version $expectedVersion is already installed; removing it before reinstall"
+    $existingLocalStateDir = Join-Path $env:LOCALAPPDATA "Packages\$($existingPackage.PackageFamilyName)\LocalState"
+    if (Test-Path $existingLocalStateDir) {
+        $localStateBackupDir = Join-Path $env:TEMP "ClaudeUsageDock-LocalState-Backup"
+        if (Test-Path $localStateBackupDir) { Remove-Item $localStateBackupDir -Recurse -Force }
+        Copy-Item $existingLocalStateDir $localStateBackupDir -Recurse
+    }
     Remove-AppxPackage -Package $existingPackage.PackageFullName
 }
 $certTrusted = Get-ChildItem Cert:\LocalMachine\TrustedPeople -ErrorAction SilentlyContinue |
@@ -81,6 +92,15 @@ Add-AppxPackage -Path '$msixPath' -ForceTargetApplicationShutdown
 $installedVersion = (Get-AppxPackage -Name $packageIdentityName).Version
 if ($installedVersion -ne $expectedVersion) {
     throw "Installed version $installedVersion does not match manifest version $expectedVersion — install did not take effect."
+}
+
+if ($localStateBackupDir) {
+    Write-Host "Restoring local usage history"
+    $newPackage = Get-AppxPackage -Name $packageIdentityName
+    $newLocalStateDir = Join-Path $env:LOCALAPPDATA "Packages\$($newPackage.PackageFamilyName)\LocalState"
+    New-Item -ItemType Directory -Force -Path $newLocalStateDir | Out-Null
+    Copy-Item (Join-Path $localStateBackupDir "*") $newLocalStateDir -Recurse -Force
+    Remove-Item $localStateBackupDir -Recurse -Force
 }
 
 Write-Host ""
