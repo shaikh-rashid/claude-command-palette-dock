@@ -42,8 +42,18 @@ jobs:
 
       - name: Decode signing certificate
         shell: pwsh
+        env:
+          RELEASE_PFX_BASE64: ${{ secrets.RELEASE_PFX_BASE64 }}
+          RELEASE_PFX_PASSWORD: ${{ secrets.RELEASE_PFX_PASSWORD }}
         run: |
-          $bytes = [Convert]::FromBase64String("${{ secrets.RELEASE_PFX_BASE64 }}")
+          # Fail fast with a message naming the missing secret — an unset secret
+          # otherwise surfaces later as an opaque empty-parameter binding error.
+          foreach ($name in "RELEASE_PFX_BASE64", "RELEASE_PFX_PASSWORD") {
+            if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
+              throw "Repository secret $name is empty or unset. Add it under Settings -> Secrets and variables -> Actions (see scripts/generate-release-cert.ps1)."
+            }
+          }
+          $bytes = [Convert]::FromBase64String($env:RELEASE_PFX_BASE64)
           [IO.File]::WriteAllBytes("$env:RUNNER_TEMP\release.pfx", $bytes)
 
       - name: Build, pack, and sign MSIX
