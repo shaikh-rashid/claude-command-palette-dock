@@ -12,7 +12,7 @@ Inspired by [omgapnt/ClaudeUsage](https://github.com/omgapnt/ClaudeUsage).
 - **Details page** — click the tile (or run the `Claude Usage Dock` command) for a full breakdown: session limit, 7-day all-model limit, and per-model weekly limits, each with a progress bar and reset time. Refresh from the command bar (Enter or Ctrl+R); account configuration is under More (Ctrl+K).
 - **Low-quota alert** — the tile icon gains a red alert badge when the session drops below a configurable threshold (20% by default), and a Windows toast notification fires the first time it crosses (can be turned off).
 - **Burn-rate estimate** — the details page projects when your session hits 0% at the current pace, based on a rolling local snapshot log.
-- **Usage heatmaps & breakdown** — a monthly GitHub-style calendar heatmap on its own tab, plus a Breakdown tab with what's-using-your-limits statistics (last-24h burn, daily average, busiest period, weekly pace projection) and a when-during-the-week heatmap. All computed from a rolling snapshot log that stays on your machine.
+- **Monthly heatmap & breakdown** — a monthly GitHub-style calendar heatmap with a color legend on its own tab, plus a Breakdown tab with what's-using-your-limits statistics (last-24h burn, daily average, busiest period, weekly pace projection). All computed from a rolling snapshot log that stays on your machine.
 - **Token auto-refresh** — when the stored Claude Code token expires, the extension refreshes it itself (and writes it back for Claude Code), so the tile keeps working overnight.
 - **Multiple accounts** — monitor up to two additional Claude accounts by pointing extra profiles at separately saved credential files, each with its own dock tile, command, and history.
 - **Settings** — refresh interval, alert threshold, toast notifications, and additional account profiles are editable from the extension's Settings page in Command Palette.
@@ -55,9 +55,9 @@ Then open Command Palette (`Win+Alt+Space`) → **Settings → Dock** → add th
 
 Open it by clicking the dock tile or running **Claude Usage Dock** from Command Palette search. The page has three sections, switched by the tab buttons at the top of the card:
 
-- **Usage** — progress bars for the **5-hour session** window, the **7-day (all models)** cap, and any **per-model weekly caps** (e.g. Opus), each with a relative reset time ("resets in 3 h 05 m"). The session bar gains a projection of when it runs out at your current pace once ~15 minutes of history exists, and an Account block lists your plan, profile, and when the data was last checked.
-- **Breakdown** — what's using your limits, computed from the local history log: weekly-quota burn over the last 24 hours, your daily average, your busiest weekday/time slot, a pace projection for the weekly cap, per-model usage, and a small heatmap of *when* during the week you use Claude. Approximate, and local to this machine — usage from other devices only shows up in the percentages, not the statistics.
-- **Heatmap** — a monthly GitHub-style calendar: five week rows by weekday columns, month labels, a WK column of week totals, and a month total. Cells shade by how much of the weekly quota was burned that day. Appears after ~6 hours of collected history and fills out over the weeks.
+- **Usage** — progress bars for the **5-hour session** window, the **7-day (all models)** cap, and any **per-model weekly caps** (e.g. Opus), each with a relative reset time ("resets in 3 h 05 m"). The session bar gains a projection of when it runs out at your current pace once ~15 minutes of history exists.
+- **Breakdown** — what's using your limits, computed from the local history log: weekly-quota burn over the last 24 hours, your daily average, your busiest weekday/time slot, a pace projection for the weekly cap, and per-model usage. Approximate, and local to this machine — usage from other devices only shows up in the percentages, not the statistics.
+- **Heatmap** — a monthly GitHub-style calendar: five week rows by weekday columns, month labels, a WK column of week totals, a month total, and a Less→More color legend. Cells shade by how much of the weekly quota was burned that day. Appears after ~6 hours of collected history and fills out over the weeks.
 
 The bottom command bar has a **Refresh** command (Enter or Ctrl+R) to re-query immediately, bypassing the snapshot cache, and a **Configure accounts** entry under More (Ctrl+K) that opens the extension's settings.
 
@@ -90,7 +90,7 @@ ClaudeUsageDock/
   Services/
     ClaudeUsageService.cs       credentials + token refresh, Anthropic usage API client
     UsageHistoryStore.cs        rolling local snapshot log (burn rate + trend graph)
-    TrendChartRenderer.cs       GitHub-style weekly + monthly heatmap PNGs (no drawing-library deps)
+    TrendChartRenderer.cs       GitHub-style monthly calendar heatmap PNG (no drawing-library deps)
     SettingsManager.cs          user settings (interval, threshold, toasts)
     ToastNotifier.cs            low-quota Windows notification
     DebugLogger.cs              opt-in file logging
