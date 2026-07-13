@@ -12,12 +12,12 @@ namespace ClaudeUsageDock.Pages;
 /// organized as three tabbed sections switched by a button strip at the top:
 ///
 ///   - Usage — the limit bars (session, weekly, per-model) with relative reset
-///     times, the burn-rate note, and account facts.
+///     times and the burn-rate note.
 ///   - Breakdown — what's using the limits, derived from the local history log:
 ///     last-24h weekly burn, daily average, busiest period, pace projection,
-///     per-model weekly caps, and the when-do-you-use-Claude weekly heatmap.
+///     and per-model weekly caps.
 ///   - Heatmap — the monthly GitHub-style calendar (five Monday-aligned week
-///     rows × weekday columns, month labels, WK totals column).
+///     rows × weekday columns, month labels, WK totals column, color legend).
 ///
 /// AdaptiveCards has no native tab control, so the strip is three Action.Submit
 /// buttons; SubmitForm records the chosen tab and re-renders the page. Refresh
@@ -33,15 +33,17 @@ internal sealed class UsageDetailsPage : ContentPage
     private const string TabBreakdown = "breakdown";
     private const string TabHeatmap = "heatmap";
 
+    // The busiest-period grid: weekday rows (0 = Monday) by 3-hour slot columns.
+    private const int SlotRows = 7;
+    private const int SlotColumns = 8;
+
     private readonly ClaudeUsageService _usageService;
-    private readonly UsageProfile _profile;
     private readonly string _heading;
     private string _activeTab = TabUsage;
 
     public UsageDetailsPage(ClaudeUsageService usageService, UsageProfile profile, ICommand settingsCommand)
     {
         _usageService = usageService;
-        _profile = profile;
         _heading = profile.Label is null ? "Claude usage" : $"Claude usage — {profile.Label}";
 
         // Keep the default profile's ids/labels exactly as before so existing
@@ -192,7 +194,10 @@ internal sealed class UsageDetailsPage : ContentPage
 
     // ---------------------------------------------------------------- Usage tab
 
-    /// <summary>Limit bars with relative reset times, the burn note, and account facts.</summary>
+    /// <summary>
+    /// Limit bars with relative reset times and the burn note. Plan and
+    /// last-checked already live in the page header, so nothing else repeats here.
+    /// </summary>
     private void AppendUsageSection(JsonArray body, ClaudeUsageSnapshot snapshot)
     {
         AddBar(body, "5-hour session", snapshot.SessionRemainingPercent, snapshot.SessionResetsAt);
@@ -206,26 +211,6 @@ internal sealed class UsageDetailsPage : ContentPage
         {
             AddBar(body, $"7-day — {model.DisplayName}", 100 - model.PercentUsed, model.ResetsAt);
         }
-
-        body.Add(new JsonObject
-        {
-            ["type"] = "TextBlock",
-            ["text"] = "Account",
-            ["weight"] = "Bolder",
-            ["spacing"] = "Large",
-        });
-        body.Add(new JsonObject
-        {
-            ["type"] = "FactSet",
-            ["spacing"] = "Small",
-            ["facts"] = new JsonArray
-            {
-                new JsonObject { ["title"] = "Plan", ["value"] = snapshot.PlanType },
-                new JsonObject { ["title"] = "Profile", ["value"] = _profile.Label ?? "Default (Claude Code sign-in)" },
-                new JsonObject { ["title"] = "Auth method", ["value"] = "Claude Code OAuth token" },
-                new JsonObject { ["title"] = "Last checked", ["value"] = snapshot.RetrievedAt.ToLocalTime().ToString("t") },
-            },
-        });
     }
 
     /// <summary>
@@ -317,8 +302,7 @@ internal sealed class UsageDetailsPage : ContentPage
 
     /// <summary>
     /// "What's using your limits?" — statistics derived from the local history
-    /// log (nothing here comes from the API beyond the per-model caps), plus the
-    /// weekly time-of-day heatmap showing when the quota gets spent.
+    /// log (nothing here comes from the API beyond the per-model caps).
     /// </summary>
     private void AppendBreakdownSection(JsonArray body, ClaudeUsageSnapshot snapshot)
     {
@@ -371,26 +355,6 @@ internal sealed class UsageDetailsPage : ContentPage
                 body.Add(SubtleText($"{model.DisplayName} — {model.PercentUsed:F0}% used · {FormatResetsIn(model.ResetsAt)}", spacing: "Small"));
             }
         }
-
-        if (BuildWeeklySlotGraph() is { } trend)
-        {
-            body.Add(new JsonObject
-            {
-                ["type"] = "TextBlock",
-                ["text"] = "When you use Claude — past week",
-                ["weight"] = "Bolder",
-                ["spacing"] = "Large",
-            });
-            body.Add(new JsonObject
-            {
-                ["type"] = "Image",
-                ["url"] = $"data:image/png;base64,{trend.PngBase64}",
-                ["width"] = $"{TrendChartRenderer.WeeklyDisplayWidth}px",
-                ["altText"] = "Heatmap of weekly usage by day and time",
-                ["spacing"] = "Small",
-            });
-            body.Add(SubtleText(trend.Caption, spacing: "Small"));
-        }
     }
 
     /// <summary>
@@ -416,7 +380,7 @@ internal sealed class UsageDetailsPage : ContentPage
         var dayAgo = DateTimeOffset.UtcNow - TimeSpan.FromDays(1);
         var last24 = 0.0;
         var total = 0.0;
-        var cells = new double[TrendChartRenderer.WeeklyRows, TrendChartRenderer.WeeklyColumns];
+        var cells = new double[SlotRows, SlotColumns];
         for (var i = 1; i < points.Count; i++)
         {
             var burned = points[i - 1].WeeklyRemainingPercent - points[i].WeeklyRemainingPercent;
@@ -447,9 +411,9 @@ internal sealed class UsageDetailsPage : ContentPage
         var best = 0.0;
         var bestRow = 0;
         var bestCol = 0;
-        for (var row = 0; row < TrendChartRenderer.WeeklyRows; row++)
+        for (var row = 0; row < SlotRows; row++)
         {
-            for (var col = 0; col < TrendChartRenderer.WeeklyColumns; col++)
+            for (var col = 0; col < SlotColumns; col++)
             {
                 if (cells[row, col] > best)
                 {
@@ -484,26 +448,6 @@ internal sealed class UsageDetailsPage : ContentPage
             : $"at this pace, the weekly limit runs out around {emptyAt:ddd h tt}";
     }
 
-    /// <summary>
-    /// The when-during-the-week heatmap (weekday rows × 3-hour slots, local time)
-    /// for the Breakdown tab. Null until enough history has accumulated.
-    /// </summary>
-    private (string PngBase64, string Caption)? BuildWeeklySlotGraph()
-    {
-        if (ComputeWeeklyBurn() is not { } burn)
-        {
-            return null;
-        }
-
-        var points = _usageService.History.Load(TimeSpan.FromDays(7));
-        var first = points[0].Timestamp;
-        var png = TrendChartRenderer.RenderWeekly(burn.SlotCells);
-        var caption = points[^1].Timestamp - first >= TimeSpan.FromDays(6.5)
-            ? "usage over the past week"
-            : $"usage since {first.ToLocalTime():MMM d}";
-        return (Convert.ToBase64String(png), caption);
-    }
-
     // -------------------------------------------------------------- Heatmap tab
 
     /// <summary>The monthly GitHub-style calendar heatmap with its captions.</summary>
@@ -526,8 +470,8 @@ internal sealed class UsageDetailsPage : ContentPage
         {
             ["type"] = "Image",
             ["url"] = $"data:image/png;base64,{trend.PngBase64}",
-            ["width"] = $"{TrendChartRenderer.MonthDisplayWidth}px",
-            ["altText"] = "Heatmap of daily usage over the past five weeks, with week totals",
+            ["width"] = $"{TrendChartRenderer.DisplayWidth}px",
+            ["altText"] = "Heatmap of daily usage over the past five weeks, with week totals and a color legend",
             ["spacing"] = "Small",
         });
         body.Add(SubtleText(trend.Caption, spacing: "Small"));
@@ -558,13 +502,13 @@ internal sealed class UsageDetailsPage : ContentPage
 
         var today = DateTimeOffset.Now.Date;
         var currentMonday = today.AddDays(-(((int)today.DayOfWeek + 6) % 7)); // DayOfWeek starts on Sunday; the grid starts on Monday
-        var startMonday = currentMonday.AddDays(-7 * (TrendChartRenderer.MonthWeekRows - 1));
+        var startMonday = currentMonday.AddDays(-7 * (TrendChartRenderer.WeekRows - 1));
 
-        var dayCells = new double[TrendChartRenderer.MonthWeekRows, TrendChartRenderer.MonthDayColumns];
-        var weekTotals = new double[TrendChartRenderer.MonthWeekRows];
-        for (var row = 0; row < TrendChartRenderer.MonthWeekRows; row++)
+        var dayCells = new double[TrendChartRenderer.WeekRows, TrendChartRenderer.DayColumns];
+        var weekTotals = new double[TrendChartRenderer.WeekRows];
+        for (var row = 0; row < TrendChartRenderer.WeekRows; row++)
         {
-            for (var col = 0; col < TrendChartRenderer.MonthDayColumns; col++)
+            for (var col = 0; col < TrendChartRenderer.DayColumns; col++)
             {
                 if (startMonday.AddDays(row * 7 + col) > today)
                 {
@@ -584,7 +528,7 @@ internal sealed class UsageDetailsPage : ContentPage
 
             var midpoint = (points[i - 1].Timestamp + (points[i].Timestamp - points[i - 1].Timestamp) / 2).ToLocalTime().Date;
             var dayIndex = (midpoint - startMonday).Days;
-            if (dayIndex < 0 || dayIndex >= TrendChartRenderer.MonthWeekRows * TrendChartRenderer.MonthDayColumns)
+            if (dayIndex < 0 || dayIndex >= TrendChartRenderer.WeekRows * TrendChartRenderer.DayColumns)
             {
                 continue;
             }
@@ -596,8 +540,8 @@ internal sealed class UsageDetailsPage : ContentPage
 
         // Month labels where a month begins (and on the first row), GitHub style.
         // Invariant culture keeps the abbreviations inside the renderer's typeface.
-        var rowLabels = new string?[TrendChartRenderer.MonthWeekRows];
-        for (var row = 0; row < TrendChartRenderer.MonthWeekRows; row++)
+        var rowLabels = new string?[TrendChartRenderer.WeekRows];
+        for (var row = 0; row < TrendChartRenderer.WeekRows; row++)
         {
             var monday = startMonday.AddDays(row * 7);
             if (row == 0 || monday.Month != startMonday.AddDays((row - 1) * 7).Month)
@@ -606,7 +550,7 @@ internal sealed class UsageDetailsPage : ContentPage
             }
         }
 
-        var png = TrendChartRenderer.RenderMonthly(dayCells, weekTotals, rowLabels);
+        var png = TrendChartRenderer.Render(dayCells, weekTotals, rowLabels);
         var caption = span >= TimeSpan.FromDays(27)
             ? "usage over the past month"
             : $"usage since {first.ToLocalTime():MMM d}";
