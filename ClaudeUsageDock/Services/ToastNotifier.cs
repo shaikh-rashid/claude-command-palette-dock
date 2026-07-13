@@ -10,6 +10,7 @@ namespace ClaudeUsageDock.Services;
 /// </summary>
 internal static class ToastNotifier
 {
+    /// <summary>Fires the "session running low" toast with the remaining percent and reset time.</summary>
     public static void ShowLowQuota(int sessionLeftPercent, DateTimeOffset resetsAtLocal)
     {
         try

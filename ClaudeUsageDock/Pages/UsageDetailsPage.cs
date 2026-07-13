@@ -15,7 +15,9 @@ namespace ClaudeUsageDock.Pages;
 /// </summary>
 internal sealed class UsageDetailsPage : ContentPage
 {
+    /// <summary>Width of each unicode progress bar; sized so bars and heatmap fit side by side.</summary>
     private const int BarWidthChars = 16;
+
     private readonly ClaudeUsageService _usageService;
     private readonly string _heading;
 
@@ -56,6 +58,11 @@ internal sealed class UsageDetailsPage : ContentPage
         ];
     }
 
+    /// <summary>
+    /// Renders the page: a markdown heading block, then the usage card. Failures
+    /// render as markdown only. CmdPal calls this on open and again whenever
+    /// RaiseItemsChanged fires (i.e. after a Refresh).
+    /// </summary>
     public override IContent[] GetContent()
     {
         var result = _usageService.GetSnapshotAsync(bypassCache: false).GetAwaiter().GetResult();
@@ -86,6 +93,12 @@ internal sealed class UsageDetailsPage : ContentPage
         public override ICommandResult SubmitForm(string inputs, string data) => CommandResult.KeepOpen();
     }
 
+    /// <summary>
+    /// Assembles the AdaptiveCard JSON: a ColumnSet with the bars column
+    /// (stretch) and, once there's enough history, the heatmap column (auto).
+    /// Built with JsonObject rather than string templates so values never need
+    /// hand-escaping.
+    /// </summary>
     private static string BuildCardJson(UsageDetailsPage page, ClaudeUsageSnapshot snapshot)
     {
         var bars = new JsonArray();
@@ -179,6 +192,11 @@ internal sealed class UsageDetailsPage : ContentPage
         return card.ToJsonString();
     }
 
+    /// <summary>
+    /// One labeled progress bar: a bold label TextBlock, then a RichTextBlock
+    /// mixing a monospace unicode bar with proportional text (an AdaptiveCard
+    /// TextBlock can't change fonts mid-line).
+    /// </summary>
     private static void AddBar(JsonArray bars, string label, double remainingPercent, DateTimeOffset resetsAt, bool first = false)
     {
         var remaining = (int)Math.Round(Math.Clamp(remainingPercent, 0, 100));
@@ -318,6 +336,7 @@ internal sealed class UsageDetailsPage : ContentPage
         return (Convert.ToBase64String(png), caption, $"month ≈ {monthTotal:F0}% of one week's quota");
     }
 
+    /// <summary>Long-form failure text with what to do about it; the dock tile shows the short versions.</summary>
     private static string DescribeFailure(UsageFetchResult result) => result.Outcome switch
     {
         UsageFetchOutcome.NotSignedIn => "No local Claude Code session found. Sign in with `claude login` and reopen this page.",

@@ -5,8 +5,14 @@ using System.Text.Json.Nodes;
 
 namespace ClaudeUsageDock.Services;
 
+/// <summary>One model-scoped weekly limit (e.g. Opus), as reported by the usage API.</summary>
 public sealed record ModelUsage(string DisplayName, double PercentUsed, DateTimeOffset ResetsAt);
 
+/// <summary>
+/// One successful reading of the usage API: how much of the 5-hour session and
+/// 7-day windows remain (as percentages), when each resets, any per-model weekly
+/// limits, plus the plan type read from the local credentials file.
+/// </summary>
 public sealed record ClaudeUsageSnapshot(
     double SessionRemainingPercent,
     double WeeklyRemainingPercent,
@@ -16,17 +22,28 @@ public sealed record ClaudeUsageSnapshot(
     string PlanType,
     DateTimeOffset RetrievedAt);
 
+/// <summary>
+/// Why a fetch produced (or didn't produce) a snapshot. The dock tile and details
+/// page map each value to its own user-facing message.
+/// </summary>
 public enum UsageFetchOutcome
 {
     Success,
+    /// <summary>No credentials file, or no access token in it.</summary>
     NotSignedIn,
+    /// <summary>Stored token expired and the refresh attempt failed too.</summary>
     TokenExpired,
+    /// <summary>HTTP 429 — the service is backing off and serving stale data meanwhile.</summary>
     RateLimited,
+    /// <summary>Any other non-success HTTP status (carried in StatusCode).</summary>
     RequestFailed,
+    /// <summary>Network error or timeout before a response arrived.</summary>
     Offline,
+    /// <summary>The response wasn't JSON in the shape the parser expects.</summary>
     UnexpectedResponse,
 }
 
+/// <summary>Outcome plus snapshot-on-success; StatusCode is set for HTTP-level failures.</summary>
 public sealed record UsageFetchResult(UsageFetchOutcome Outcome, ClaudeUsageSnapshot? Snapshot, int? StatusCode = null)
 {
     public static UsageFetchResult Ok(ClaudeUsageSnapshot snapshot) => new(UsageFetchOutcome.Success, snapshot);
@@ -97,6 +114,11 @@ public sealed class ClaudeUsageService : IDisposable
         History = new UsageHistoryStore(historyFileSuffix);
     }
 
+    /// <summary>
+    /// The one public entry point: returns the cached snapshot while it's fresh,
+    /// otherwise fetches a new one. <paramref name="bypassCache"/> (the Refresh
+    /// command) skips the freshness check but still honors rate-limit backoff.
+    /// </summary>
     public async Task<UsageFetchResult> GetSnapshotAsync(bool bypassCache = false)
     {
         if (!bypassCache && IsCacheFresh())
@@ -151,6 +173,10 @@ public sealed class ClaudeUsageService : IDisposable
         return _lastFailure ?? UsageFetchResult.Failure(UsageFetchOutcome.RateLimited);
     }
 
+    /// <summary>
+    /// One full fetch: read credentials, refresh the token if it's expired, call
+    /// the usage endpoint, parse, cache, and log the snapshot to history.
+    /// </summary>
     private async Task<UsageFetchResult> FetchFromApiAsync()
     {
         var credentials = ReadCredentials();
@@ -226,6 +252,13 @@ public sealed class ClaudeUsageService : IDisposable
         }
     }
 
+    /// <summary>
+    /// Maps the API's shape (<c>five_hour</c>/<c>seven_day</c> objects with a
+    /// used-percent <c>utilization</c>, plus a <c>limits</c> array whose
+    /// <c>weekly_scoped</c> entries are per-model caps) onto the snapshot record.
+    /// Utilization is inverted here: the API reports percent used, the UI shows
+    /// percent remaining.
+    /// </summary>
     private static ClaudeUsageSnapshot ParseSnapshot(string json, string planType)
     {
         using var document = JsonDocument.Parse(json);
@@ -274,6 +307,7 @@ public sealed class ClaudeUsageService : IDisposable
     private static TimeSpan Clamp(TimeSpan backoff) =>
         TimeSpan.FromSeconds(Math.Clamp(backoff.TotalSeconds, 30, 900));
 
+    /// <summary>Parses an ISO reset timestamp, falling back to "now" so the UI never shows a garbage date.</summary>
     private static DateTimeOffset ParseResetTime(string? isoTimestamp)
     {
         if (!string.IsNullOrEmpty(isoTimestamp) &&
@@ -285,8 +319,14 @@ public sealed class ClaudeUsageService : IDisposable
         return DateTimeOffset.UtcNow;
     }
 
+    /// <summary>The fields this extension needs from Claude Code's credentials file; all optional because the file may be absent or partial.</summary>
     private sealed record StoredCredentials(string? AccessToken, string? RefreshToken, DateTimeOffset? ExpiresAt, string? PlanType);
 
+    /// <summary>
+    /// Reads the <c>claudeAiOauth</c> block of Claude Code's credentials JSON.
+    /// Any read/parse problem degrades to "no credentials" (→ NotSignedIn)
+    /// rather than throwing into the dock refresh path.
+    /// </summary>
     private StoredCredentials ReadCredentials()
     {
         try
@@ -425,8 +465,10 @@ public sealed class ClaudeUsageService : IDisposable
     }
 }
 
+/// <summary>Small helper so optional JSON fields read as one-liners instead of TryGetProperty ceremony.</summary>
 internal static class JsonElementExtensions
 {
+    /// <summary>The property's value, or null when absent, JSON-null, or the element isn't an object.</summary>
     public static JsonElement? GetPropertyOrNull(this JsonElement element, string propertyName)
     {
         return element.ValueKind == JsonValueKind.Object && element.TryGetProperty(propertyName, out var value) && value.ValueKind != JsonValueKind.Null

@@ -69,10 +69,13 @@ internal sealed class SettingsManager : JsonSettingsManager
         "Full path to a saved .credentials.json for another Claude account. Leave blank to disable.",
         string.Empty);
 
+    /// <summary>How often the provider's timer refreshes the dock tiles.</summary>
     public TimeSpan DockRefreshInterval => TimeSpan.FromSeconds(ParseOrDefault(_refreshInterval.Value, DefaultRefreshSeconds));
 
+    /// <summary>Session-remaining percentage below which the tile switches to the alert icon.</summary>
     public int LowQuotaThresholdPercent => ParseOrDefault(_lowQuotaThreshold.Value, DefaultThresholdPercent);
 
+    /// <summary>Whether crossing the threshold also fires a Windows toast.</summary>
     public bool LowQuotaToastEnabled => _lowQuotaToast.Value;
 
     public SettingsManager()
@@ -106,6 +109,7 @@ internal sealed class SettingsManager : JsonSettingsManager
         return profiles;
     }
 
+    /// <summary>Adds an extra account slot only when its credentials path is filled in.</summary>
     private static void AddIfConfigured(List<UsageProfile> profiles, string id, string? label, string? path, string fallbackLabel)
     {
         if (string.IsNullOrWhiteSpace(path))
@@ -116,9 +120,11 @@ internal sealed class SettingsManager : JsonSettingsManager
         profiles.Add(new UsageProfile(id, string.IsNullOrWhiteSpace(label) ? fallbackLabel : label.Trim(), path.Trim(), id));
     }
 
+    /// <summary>Defends against hand-edited settings.json values that aren't positive integers.</summary>
     private static int ParseOrDefault(string? value, int fallback) =>
         int.TryParse(value, out var parsed) && parsed > 0 ? parsed : fallback;
 
+    /// <summary>settings.json under CmdPal's per-extension settings directory (created on first run).</summary>
     private static string SettingsJsonPath()
     {
         var directory = Utilities.BaseSettingsPath("ClaudeUsageDock");

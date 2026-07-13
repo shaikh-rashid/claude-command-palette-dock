@@ -6,12 +6,20 @@ using Microsoft.CommandPalette.Extensions.Toolkit;
 
 namespace ClaudeUsageDock;
 
+/// <summary>
+/// The single command provider behind the extension: it owns the settings, builds
+/// one <see cref="ProfileRuntime"/> (usage service + dock tile + details page +
+/// top-level command) per configured account, and drives the periodic refresh
+/// timer that keeps the dock tiles live.
+/// </summary>
 public sealed partial class PowerCommandProvider : CommandProvider, IDisposable
 {
     private readonly SettingsManager _settingsManager = new();
     private readonly Timer _dockRefreshTimer;
     private readonly object _profilesLock = new();
 
+    // Swapped wholesale (never mutated) under _profilesLock when settings change;
+    // readers take a local copy so a rebuild can't pull the list out from under them.
     private IReadOnlyList<ProfileRuntime> _profiles = [];
 
     public PowerCommandProvider()
@@ -65,6 +73,7 @@ public sealed partial class PowerCommandProvider : CommandProvider, IDisposable
         RaiseItemsChanged(0);
     }
 
+    /// <summary>Builds the full object set for one account profile.</summary>
     private ProfileRuntime CreateRuntime(UsageProfile profile)
     {
         var service = new ClaudeUsageService(profile.CredentialsFilePath, profile.HistorySuffix);
@@ -94,10 +103,13 @@ public sealed partial class PowerCommandProvider : CommandProvider, IDisposable
         }
     }
 
+    /// <summary>One searchable "Claude Usage Dock" command per profile.</summary>
     public override ICommandItem[] TopLevelCommands() => _profiles.Select(p => (ICommandItem)p.Command).ToArray();
 
+    /// <summary>One dock tile per profile, offered to CmdPal's Dock settings page.</summary>
     public override ICommandItem[]? GetDockBands() => _profiles.Select(p => (ICommandItem)p.DockBand.DockItem).ToArray();
 
+    /// <summary>Timer tick: refresh every profile's tile, then tell CmdPal to re-read them.</summary>
     private async Task RefreshAllAsync()
     {
         // Snapshot the list: RebuildProfiles() can swap it out from under a running tick.
@@ -118,5 +130,6 @@ public sealed partial class PowerCommandProvider : CommandProvider, IDisposable
         base.Dispose();
     }
 
+    /// <summary>Everything one account contributes to CmdPal, bundled so it's created and disposed together.</summary>
     private sealed record ProfileRuntime(UsageProfile Profile, ClaudeUsageService Service, UsageDockBand DockBand, CommandItem Command);
 }

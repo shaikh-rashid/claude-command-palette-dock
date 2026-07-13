@@ -15,7 +15,9 @@ internal sealed class UsageDockBand
     private readonly ListItem _tile;
     private readonly string _baseTitle;
     private readonly string _titleSuffix;
+    // Last icon state applied, so the icon object is only swapped on transitions.
     private bool _appliedLowQuota;
+    // Whether the current dip below the threshold has already produced a toast.
     private bool _lowQuotaNotified;
 
     public WrappedDockItem DockItem { get; }
@@ -40,6 +42,11 @@ internal sealed class UsageDockBand
         DockItem = new WrappedDockItem([_tile], dockId, bandName);
     }
 
+    /// <summary>
+    /// Called on every provider timer tick: re-reads usage (usually served from
+    /// the service's cache) and rewrites the tile's title, subtitle, and icon.
+    /// Failures render as a short status message instead of numbers.
+    /// </summary>
     public async Task RefreshAsync()
     {
         var result = await _usageService.GetSnapshotAsync().ConfigureAwait(false);
@@ -71,6 +78,7 @@ internal sealed class UsageDockBand
             lowOnQuota: lowOnQuota);
     }
 
+    /// <summary>Tile-sized (subtitle-length) failure text; the details page has the long-form versions.</summary>
     private static string DescribeFailure(UsageFetchOutcome outcome, int? statusCode) => outcome switch
     {
         UsageFetchOutcome.NotSignedIn => "Not signed in to Claude Code",
@@ -82,6 +90,7 @@ internal sealed class UsageDockBand
         _ => "Unable to fetch usage",
     };
 
+    /// <summary>Writes the tile; the icon is only touched when the low-quota state flips, since it's the expensive part to re-render.</summary>
     private void ApplyTile(string title, string subtitle, bool lowOnQuota)
     {
         _tile.Title = title;

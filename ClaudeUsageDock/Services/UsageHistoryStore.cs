@@ -3,6 +3,7 @@ using Microsoft.CommandPalette.Extensions.Toolkit;
 
 namespace ClaudeUsageDock.Services;
 
+/// <summary>One logged sample: when it was taken and how much of each window remained.</summary>
 public sealed record UsagePoint(DateTimeOffset Timestamp, double SessionRemainingPercent, double WeeklyRemainingPercent);
 
 /// <summary>
@@ -32,6 +33,11 @@ public sealed class UsageHistoryStore
         _filePath = Path.Combine(directory, fileName);
     }
 
+    /// <summary>
+    /// Appends a snapshot, rate-limited to one line per <see cref="MinSampleSpacing"/>
+    /// so fast dock refresh intervals don't bloat the log. Append failures are
+    /// logged and dropped — history is best-effort, never load-bearing.
+    /// </summary>
     public void Record(ClaudeUsageSnapshot snapshot)
     {
         lock (_gate)
@@ -88,6 +94,7 @@ public sealed class UsageHistoryStore
         }
     }
 
+    /// <summary>Parses one CSV line; null for anything malformed (bad lines are simply skipped).</summary>
     private static UsagePoint? ParseLine(string line)
     {
         var parts = line.Split(',');
@@ -102,6 +109,10 @@ public sealed class UsageHistoryStore
         return new UsagePoint(DateTimeOffset.FromUnixTimeMilliseconds(unixMs), session, weekly);
     }
 
+    /// <summary>
+    /// Drops lines older than the retention window, writing to a temp file first
+    /// so a crash mid-prune can't destroy the log.
+    /// </summary>
     private void Prune()
     {
         var cutoff = DateTimeOffset.UtcNow - RetentionWindow;
