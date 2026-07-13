@@ -29,6 +29,7 @@ Legend: `[ ]` planned · `[~]` in progress · `[x]` done
 
 ## ✅ Done
 
+- [x] Reverted the heatmap to the weekly design from v0.7.0 (weekday rows × 3-hour columns) — the monthly calendar layout didn't look as good; kept v0.8.0's command-bar Refresh, Configure-accounts entry, and 36-day retention (v0.8.1)
 - [x] Monthly usage heatmap: the graph now covers five Monday-aligned weeks as a GitHub-style calendar — day cells, month labels (JUN/JUL) at month starts, a separated WK week-totals column, and a month-total caption line, so day/week/month usage read from one graphic; history retention extended 8 → 36 days. Refresh moved from a card button to the page command bar (Enter / Ctrl+R) and "Configure accounts" (settings page) added to the More menu (Ctrl+K) (v0.8.0)
 - [x] Restyled the weekly trend graph as a GitHub-style contribution heatmap in the existing navy/teal/cyan scheme: weekday rows (M/W/F labels) × 3-hour columns (06/12/18 labels, local time), rounded cells, four-step teal→cyan intensity ramp relative to the busiest slot; cells show when the weekly quota was burned. Labels come from a tiny built-in 5×5 pixel font, still no drawing-library deps (v0.7.0)
 - [x] Security & secret checking in CI for both GitHub and GitLab: full-history secret scan (gitleaks action / GitLab Secret Detection template) + `dotnet list package --vulnerable` NuGet audit on main pushes and PRs/MRs, weekly scheduled audit on GitHub. Ran both checks locally — history is clean, no vulnerable packages (v0.6.1)

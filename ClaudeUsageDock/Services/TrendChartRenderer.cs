@@ -4,41 +4,33 @@ using Windows.Storage.Streams;
 namespace ClaudeUsageDock.Services;
 
 /// <summary>
-/// Rasterizes the monthly usage trend into a GitHub-style heatmap PNG laid out as a
-/// calendar: five Monday-aligned week rows by weekday columns (headed M T W T F S S),
-/// month labels at the left where a new month starts, and a separated WK column of
-/// week totals — so the one graphic reads day, week, and month usage. Rounded cells
-/// step through a teal→cyan intensity ramp on a dark navy panel. Pixel work happens
-/// on a plain BGRA buffer and the OS PNG encoder does the rest, so no drawing
-/// library is pulled in. The panel bakes in its own dark surface so it reads the
-/// same on light and dark themes.
+/// Rasterizes the weekly usage trend into a GitHub-style contribution heatmap PNG:
+/// weekday rows (labeled M/W/F) by 3-hour-slot columns (labeled 06/12/18), rounded
+/// cells stepping through a teal→cyan intensity ramp on a dark navy panel. Pixel
+/// work happens on a plain BGRA buffer and the OS PNG encoder does the rest, so no
+/// drawing library is pulled in. The panel bakes in its own dark surface so it
+/// reads the same on light and dark themes.
 /// </summary>
 internal static class TrendChartRenderer
 {
-    /// <summary>Cells holding this instead of a usage value are not drawn at all (future days).</summary>
-    public const double NotApplicable = -1;
-
-    public const int WeekRows = 5;   // current week + the four before it
-    public const int DayColumns = 7; // Mon..Sun
-
     /// <summary>Drawn at 3x and box-filtered down, which anti-aliases the rounded corners.</summary>
     private const int SuperSample = 3;
 
+    public const int Rows = 7;    // Mon..Sun
+    public const int Columns = 8; // 3-hour slots, 00:00–24:00
+
     // Geometry in display units; the output bitmap is this times the pixel ratio.
-    private const int CellSize = 18;
+    private const int CellSize = 13;
     private const int CellGap = 3;
-    private const int CellCornerRadius = 4;
+    private const int CellCornerRadius = 3;
     private const int Padding = 8;
     private const int GlyphScale = 2;
-    private const int GlyphSize = 5 * GlyphScale;              // the font is a 5x5 pixel grid
-    private const int GlyphAdvance = GlyphSize + GlyphScale;   // glyph plus inter-glyph spacing
+    private const int GlyphSize = 5 * GlyphScale; // the font is a 5x5 pixel grid
     private const int LabelGap = 4;
-    private const int TotalsGap = 8; // extra space setting the WK column apart from the day grid
-    private const int GridLeft = Padding + 3 * GlyphAdvance + LabelGap; // room for a 3-letter month label
+    private const int GridLeft = Padding + GlyphSize + LabelGap;
     private const int GridTop = Padding + GlyphSize + LabelGap;
-    private const int TotalsLeft = GridLeft + DayColumns * (CellSize + CellGap) - CellGap + TotalsGap;
-    public const int DisplayWidth = TotalsLeft + CellSize + Padding;
-    public const int DisplayHeight = GridTop + WeekRows * CellSize + (WeekRows - 1) * CellGap + Padding;
+    public const int DisplayWidth = GridLeft + Columns * CellSize + (Columns - 1) * CellGap + Padding;
+    public const int DisplayHeight = GridTop + Rows * CellSize + (Rows - 1) * CellGap + Padding;
 
     // Panel palette, stored B,G,R to match the buffer layout.
     private static readonly byte[] Surface = [0x2D, 0x22, 0x17]; // #17222D
@@ -55,49 +47,29 @@ internal static class TrendChartRenderer
         [0xE8, 0xD0, 0x62], // #62D0E8
     ];
 
-    // 5x5 pixel font: the uppercase letters that weekday headers, month
-    // abbreviations (invariant culture), and the WK header can need.
+    // 5x5 pixel font, just the glyphs the axis labels need.
     private static readonly Dictionary<char, string[]> Font = new()
     {
-        ['A'] = [".***.", "*...*", "*****", "*...*", "*...*"],
-        ['B'] = ["****.", "*...*", "****.", "*...*", "****."],
-        ['C'] = [".****", "*....", "*....", "*....", ".****"],
-        ['D'] = ["****.", "*...*", "*...*", "*...*", "****."],
-        ['E'] = ["*****", "*....", "***..", "*....", "*****"],
-        ['F'] = ["*****", "*....", "***..", "*....", "*...."],
-        ['G'] = [".****", "*....", "*..**", "*...*", ".***."],
-        ['J'] = ["..***", "...*.", "...*.", "*..*.", ".**.."],
-        ['K'] = ["*..*.", "*.*..", "**...", "*.*..", "*..*."],
-        ['L'] = ["*....", "*....", "*....", "*....", "*****"],
         ['M'] = ["*...*", "**.**", "*.*.*", "*...*", "*...*"],
-        ['N'] = ["*...*", "**..*", "*.*.*", "*..**", "*...*"],
-        ['O'] = [".***.", "*...*", "*...*", "*...*", ".***."],
-        ['P'] = ["****.", "*...*", "****.", "*....", "*...."],
-        ['R'] = ["****.", "*...*", "****.", "*.*..", "*..*."],
-        ['S'] = [".****", "*....", ".***.", "....*", "****."],
-        ['T'] = ["*****", "..*..", "..*..", "..*..", "..*.."],
-        ['U'] = ["*...*", "*...*", "*...*", "*...*", ".***."],
-        ['V'] = ["*...*", "*...*", "*...*", ".*.*.", "..*.."],
         ['W'] = ["*...*", "*...*", "*.*.*", "**.**", "*...*"],
-        ['Y'] = ["*...*", ".*.*.", "..*..", "..*..", "..*.."],
+        ['F'] = ["*****", "*....", "****.", "*....", "*...."],
+        ['0'] = [".***.", "*...*", "*...*", "*...*", ".***."],
+        ['1'] = ["..*..", ".**..", "..*..", "..*..", ".***."],
+        ['2'] = [".***.", "*...*", "...*.", "..*..", "*****"],
+        ['6'] = [".***.", "*....", "****.", "*...*", ".***."],
+        ['8'] = [".***.", "*...*", ".***.", "*...*", ".***."],
     };
 
-    private const string WeekdayHeader = "MTWTFSS";
-
     /// <summary>
-    /// Renders the heatmap to PNG bytes. <paramref name="dayCells"/> is indexed
-    /// [week row (0 = oldest), weekday column (0 = Monday)] and holds non-negative
-    /// usage amounts in any unit, or <see cref="NotApplicable"/> for days that
-    /// haven't happened yet. <paramref name="weekTotals"/> holds one total per row
-    /// for the WK column; <paramref name="rowLabels"/> holds an up-to-3-letter
-    /// label per row or null (month names, shown where a month begins). Day cells
-    /// and week totals are each leveled against their own maximum, quartered into
-    /// the four ramp steps like GitHub's contribution graph. The output bitmap is
-    /// <see cref="DisplayWidth"/> × <see cref="DisplayHeight"/> times
+    /// Renders the heatmap to PNG bytes. <paramref name="cells"/> is indexed
+    /// [weekday row (0 = Monday), 3-hour slot column] and holds non-negative usage
+    /// amounts in any unit; intensity is relative to the busiest cell, quartered
+    /// into the four ramp steps like GitHub's contribution graph. The output
+    /// bitmap is <see cref="DisplayWidth"/> × <see cref="DisplayHeight"/> times
     /// <paramref name="pixelRatio"/>, so a ratio of 2 stays crisp on high-DPI
     /// screens when shown at the display size.
     /// </summary>
-    public static byte[] Render(double[,] dayCells, double[] weekTotals, string?[] rowLabels, int pixelRatio = 2)
+    public static byte[] Render(double[,] cells, int pixelRatio = 2)
     {
         var unit = pixelRatio * SuperSample;
         var w = DisplayWidth * unit;
@@ -105,55 +77,46 @@ internal static class TrendChartRenderer
         var canvas = new byte[w * h * 4];
         FillRect(canvas, w, 0, 0, w, h, Surface);
 
-        var maxDay = 0.0;
-        for (var row = 0; row < WeekRows; row++)
+        var max = 0.0;
+        for (var row = 0; row < Rows; row++)
         {
-            for (var col = 0; col < DayColumns; col++)
+            for (var col = 0; col < Columns; col++)
             {
-                maxDay = Math.Max(maxDay, dayCells[row, col]);
+                max = Math.Max(max, cells[row, col]);
             }
         }
 
-        var maxWeek = weekTotals.Max();
-
-        for (var row = 0; row < WeekRows; row++)
+        for (var row = 0; row < Rows; row++)
         {
-            var top = (GridTop + row * (CellSize + CellGap)) * unit;
-            for (var col = 0; col < DayColumns; col++)
+            for (var col = 0; col < Columns; col++)
             {
-                if (dayCells[row, col] is NotApplicable)
-                {
-                    continue;
-                }
-
+                var value = cells[row, col];
+                var level = value <= 0 || max <= 0
+                    ? 0
+                    : Math.Clamp((int)Math.Ceiling(value / max * (CellRamp.Length - 1)), 1, CellRamp.Length - 1);
                 FillRoundedRect(
                     canvas, w,
-                    (GridLeft + col * (CellSize + CellGap)) * unit, top,
-                    CellSize * unit, CellSize * unit, CellCornerRadius * unit,
-                    CellRamp[Level(dayCells[row, col], maxDay)]);
-            }
-
-            FillRoundedRect(
-                canvas, w,
-                TotalsLeft * unit, top,
-                CellSize * unit, CellSize * unit, CellCornerRadius * unit,
-                CellRamp[Level(weekTotals[row], maxWeek)]);
-
-            if (rowLabels[row] is { Length: > 0 and <= 3 } label)
-            {
-                var y = top + (CellSize - GlyphSize) / 2 * unit;
-                DrawText(canvas, w, label, Padding * unit, y, unit);
+                    (GridLeft + col * (CellSize + CellGap)) * unit,
+                    (GridTop + row * (CellSize + CellGap)) * unit,
+                    CellSize * unit,
+                    CellSize * unit,
+                    CellCornerRadius * unit,
+                    CellRamp[level]);
             }
         }
 
-        // Header row: one weekday initial centered over each day column, WK over the totals.
-        for (var col = 0; col < DayColumns; col++)
+        // Column labels: slot start hours, sparse like GitHub's month row.
+        foreach (var (text, col) in new[] { ("06", 2), ("12", 4), ("18", 6) })
         {
-            var x = (GridLeft + col * (CellSize + CellGap) + (CellSize - GlyphSize) / 2) * unit;
-            DrawText(canvas, w, WeekdayHeader[col].ToString(), x, Padding * unit, unit);
+            DrawText(canvas, w, text, (GridLeft + col * (CellSize + CellGap)) * unit, Padding * unit, unit);
         }
 
-        DrawText(canvas, w, "WK", (TotalsLeft - (2 * GlyphAdvance - CellSize) / 2) * unit, Padding * unit, unit);
+        // Row labels: every other weekday, GitHub's Mon/Wed/Fri convention.
+        foreach (var (glyph, row) in new[] { ('M', 0), ('W', 2), ('F', 4) })
+        {
+            var y = (GridTop + row * (CellSize + CellGap) + (CellSize - GlyphSize) / 2) * unit;
+            DrawText(canvas, w, glyph.ToString(), Padding * unit, y, unit);
+        }
 
         var outWidth = DisplayWidth * pixelRatio;
         var outHeight = DisplayHeight * pixelRatio;
@@ -161,10 +124,6 @@ internal static class TrendChartRenderer
         DrawBorder(pixels, outWidth, outHeight, pixelRatio);
         return EncodePng(pixels, outWidth, outHeight);
     }
-
-    /// <summary>0 for nothing, else the value's quarter of the maximum, mapped to ramp steps 1–4.</summary>
-    private static int Level(double value, double max) =>
-        value <= 0 || max <= 0 ? 0 : Math.Clamp((int)Math.Ceiling(value / max * (CellRamp.Length - 1)), 1, CellRamp.Length - 1);
 
     private static void FillRect(byte[] canvas, int w, int left, int top, int width, int height, byte[] color)
     {
@@ -211,21 +170,19 @@ internal static class TrendChartRenderer
         var pen = left;
         foreach (var ch in text)
         {
-            if (Font.TryGetValue(ch, out var glyph))
+            var glyph = Font[ch];
+            for (var gy = 0; gy < 5; gy++)
             {
-                for (var gy = 0; gy < 5; gy++)
+                for (var gx = 0; gx < 5; gx++)
                 {
-                    for (var gx = 0; gx < 5; gx++)
+                    if (glyph[gy][gx] == '*')
                     {
-                        if (glyph[gy][gx] == '*')
-                        {
-                            FillRect(canvas, w, pen + gx * pixel, top + gy * pixel, pixel, pixel, Label);
-                        }
+                        FillRect(canvas, w, pen + gx * pixel, top + gy * pixel, pixel, pixel, Label);
                     }
                 }
             }
 
-            pen += GlyphAdvance * unit;
+            pen += (GlyphSize + GlyphScale) * unit;
         }
     }
 

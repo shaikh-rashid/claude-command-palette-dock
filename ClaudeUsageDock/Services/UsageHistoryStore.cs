@@ -13,7 +13,8 @@ public sealed record UsagePoint(DateTimeOffset Timestamp, double SessionRemainin
 public sealed class UsageHistoryStore
 {
     private static readonly TimeSpan MinSampleSpacing = TimeSpan.FromMinutes(4);
-    // Five Monday-aligned weeks feed the monthly heatmap; one spare day of slack.
+    // Longer than the weekly heatmap needs: keeps history accumulating for a
+    // future multi-week view (see TODO "Longer history window") at trivial cost.
     private static readonly TimeSpan RetentionWindow = TimeSpan.FromDays(36);
     private const long PruneThresholdBytes = 1024 * 1024;
 

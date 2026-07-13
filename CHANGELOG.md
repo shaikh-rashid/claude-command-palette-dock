@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-07-12
+
+### Changed
+
+- The heatmap is back to the weekly design from 0.7.0 (weekday rows × 3-hour-slot columns, "Past week"), reverting 0.8.0's monthly calendar layout — the older look was preferred. The rest of 0.8.0 (command-bar Refresh, "Configure accounts" in More) is unchanged, and history retention stays at 36 days so a future multi-week view starts with data already collected.
+
 ## [0.8.0] - 2026-07-12
 
 ### Changed
