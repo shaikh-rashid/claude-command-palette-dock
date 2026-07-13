@@ -53,6 +53,14 @@ Write-Host "[4/5] Sign MSIX"
 Set-MsixSignature -MsixPath $msixPath -PfxPath $pfxPath -PfxPassword $pfxPassword
 
 Write-Host "[5/5] Install"
+$expectedVersion = ([xml](Get-Content (Join-Path $projectDir "Package.appxmanifest"))).Package.Identity.Version
+$existingPackage = Get-AppxPackage -Name $packageIdentityName -ErrorAction SilentlyContinue
+if ($existingPackage -and $existingPackage.Version -eq $expectedVersion) {
+    # Reinstalling the same version with different contents fails with 0x80073CFB,
+    # which happens constantly while iterating without a version bump. Remove first.
+    Write-Host "Version $expectedVersion is already installed; removing it before reinstall"
+    Remove-AppxPackage -Package $existingPackage.PackageFullName
+}
 $certTrusted = Get-ChildItem Cert:\LocalMachine\TrustedPeople -ErrorAction SilentlyContinue |
     Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
 if (-not $certTrusted) {
@@ -71,7 +79,6 @@ Add-AppxPackage -Path '$msixPath' -ForceTargetApplicationShutdown
 }
 
 $installedVersion = (Get-AppxPackage -Name $packageIdentityName).Version
-$expectedVersion = ([xml](Get-Content (Join-Path $projectDir "Package.appxmanifest"))).Package.Identity.Version
 if ($installedVersion -ne $expectedVersion) {
     throw "Installed version $installedVersion does not match manifest version $expectedVersion — install did not take effect."
 }
