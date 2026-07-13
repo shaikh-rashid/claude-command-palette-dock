@@ -41,7 +41,10 @@ function New-MsixPackage {
         [Parameter(Mandatory)][string]$ProjectDir,
         [Parameter(Mandatory)][string]$PublishDir,
         [Parameter(Mandatory)][string]$StagingDir,
-        [Parameter(Mandatory)][string]$OutputMsixPath
+        [Parameter(Mandatory)][string]$OutputMsixPath,
+        # MSIX signing requires Identity Publisher == signing cert subject, so
+        # release builds must swap out the dev publisher the manifest ships with.
+        [string]$PublisherOverride
     )
 
     if (Test-Path $StagingDir) { Remove-Item $StagingDir -Recurse -Force }
@@ -53,6 +56,13 @@ function New-MsixPackage {
     # the folder as a unit nests it as Assets\Assets instead of merging.
     Copy-Item (Join-Path $ProjectDir "Assets\*") (Join-Path $StagingDir "Assets") -Recurse -Force
     Copy-Item (Join-Path $ProjectDir "Package.appxmanifest") (Join-Path $StagingDir "AppxManifest.xml") -Force
+
+    if ($PublisherOverride) {
+        $manifestPath = Join-Path $StagingDir "AppxManifest.xml"
+        [xml]$manifest = Get-Content $manifestPath
+        $manifest.Package.Identity.Publisher = $PublisherOverride
+        $manifest.Save($manifestPath)
+    }
 
     $makeAppxExe = Find-WindowsKitTool -ToolName "makeappx.exe"
     if (Test-Path $OutputMsixPath) { Remove-Item $OutputMsixPath -Force }
@@ -68,6 +78,8 @@ function Set-MsixSignature {
     )
 
     $signToolExe = Find-WindowsKitTool -ToolName "signtool.exe"
-    & $signToolExe sign /fd SHA256 /a /f $PfxPath /p $PfxPassword $MsixPath | Out-Null
+    # Don't pipe to Out-Null: signtool writes "Error information: SignerSign()
+    # failed" diagnostics to stdout, and hiding them cost a CI debugging round.
+    & $signToolExe sign /fd SHA256 /a /f $PfxPath /p $PfxPassword $MsixPath
     if ($LASTEXITCODE -ne 0) { throw "signtool failed" }
 }

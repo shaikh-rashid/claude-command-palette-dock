@@ -23,19 +23,27 @@ New-Item $OutputDir -ItemType Directory -Force | Out-Null
 $msixPath = Join-Path $OutputDir "ClaudeUsageDock.msix"
 $certPath = Join-Path $OutputDir "ClaudeUsageDock-Release.cer"
 
+# Load the signing cert up front: it validates the PFX and password with a
+# clear error before spending time on the build, and its subject is needed to
+# patch the manifest publisher (signtool refuses to sign an MSIX whose
+# Identity Publisher differs from the certificate subject — the manifest in
+# the repo carries the dev publisher, not the release one).
+Write-Host "Loading signing certificate..."
+$securePassword = ConvertTo-SecureString -String $PfxPassword -Force -AsPlainText
+$cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($PfxPath, $securePassword)
+Write-Host "Signing as: $($cert.Subject) (thumbprint $($cert.Thumbprint))"
+
 Write-Host "Publishing..."
 & dotnet publish $csproj -c Release -r win-x64 --self-contained false -p:GenerateAppxPackageOnBuild=false -v minimal -nologo
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed" }
 
 Write-Host "Staging and packing MSIX..."
-New-MsixPackage -ProjectDir $projectDir -PublishDir $publishDir -StagingDir $stagingDir -OutputMsixPath $msixPath
+New-MsixPackage -ProjectDir $projectDir -PublishDir $publishDir -StagingDir $stagingDir -OutputMsixPath $msixPath -PublisherOverride $cert.Subject
 
 Write-Host "Signing MSIX..."
 Set-MsixSignature -MsixPath $msixPath -PfxPath $PfxPath -PfxPassword $PfxPassword
 
 Write-Host "Exporting the public certificate for users to trust..."
-$securePassword = ConvertTo-SecureString -String $PfxPassword -Force -AsPlainText
-$cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($PfxPath, $securePassword)
 Export-Certificate -Cert $cert -FilePath $certPath | Out-Null
 
 Write-Host "Done. Artifacts in $OutputDir"
