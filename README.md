@@ -55,7 +55,7 @@ Then open Command Palette (`Win+Alt+Space`) → **Settings → Dock** → add th
 
 Open it by clicking the dock tile or running **Claude Usage Dock** from Command Palette search. The page has three sections, switched by the tab buttons at the top of the card:
 
-- **Usage** — progress bars for the **5-hour session** window, the **7-day (all models)** cap, and any **per-model weekly caps** (e.g. Opus), each with a relative reset time ("resets in 3 h 05 m"). The session bar gains a projection of when it runs out at your current pace once ~15 minutes of history exists.
+- **Usage** — progress bars for the **5-hour session** window, the **weekly (all models)** cap, and any **per-model weekly caps** (e.g. Opus), each showing percent used and its reset time ("Resets in 4 hr 39 min", or the concrete moment when it's more than a day out). Bars turn amber at 75% used and red at 90% so a limit that's close stands out. The session row gains a projection of when it runs out at your current pace once ~15 minutes of history exists.
 - **Breakdown** — what's using your limits, computed from the local history log: weekly-quota burn over the last 24 hours, your daily average, your busiest weekday/time slot, a pace projection for the weekly cap, and per-model usage. Approximate, and local to this machine — usage from other devices only shows up in the percentages, not the statistics.
 - **Heatmap** — a monthly GitHub-style calendar: five week rows by weekday columns, month labels, a WK column of week totals, a month total, and a Less→More color legend. Cells shade by how much of the weekly quota was burned that day. Appears after ~6 hours of collected history and fills out over the weeks.
 
@@ -90,7 +90,9 @@ ClaudeUsageDock/
   Services/
     ClaudeUsageService.cs       credentials + token refresh, Anthropic usage API client
     UsageHistoryStore.cs        rolling local snapshot log (burn rate + trend graph)
-    TrendChartRenderer.cs       GitHub-style monthly calendar heatmap PNG (no drawing-library deps)
+    TrendChartRenderer.cs       GitHub-style monthly calendar heatmap PNG
+    BarRenderer.cs              usage progress bar PNGs (blue/amber/red by usage)
+    Rasterizer.cs               shared pixel primitives for the PNG renderers (no drawing-library deps)
     SettingsManager.cs          user settings (interval, threshold, toasts)
     ToastNotifier.cs            low-quota Windows notification
     DebugLogger.cs              opt-in file logging

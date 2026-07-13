@@ -1,5 +1,4 @@
 using Windows.Graphics.Imaging;
-using Windows.Storage.Streams;
 
 namespace ClaudeUsageDock.Services;
 
@@ -20,9 +19,6 @@ internal static class TrendChartRenderer
 
     public const int WeekRows = 5;   // current week + the four before it
     public const int DayColumns = 7; // Mon..Sun
-
-    /// <summary>Drawn at 3x and box-filtered down, which anti-aliases the rounded corners.</summary>
-    private const int SuperSample = 3;
 
     // Geometry in display units; the output bitmap is this times the pixel ratio.
     // Sized generously — the heatmap is the sole content of its tab.
@@ -110,11 +106,11 @@ internal static class TrendChartRenderer
     /// </summary>
     public static byte[] Render(double[,] dayCells, double[] weekTotals, string?[] rowLabels, int pixelRatio = 2)
     {
-        var unit = pixelRatio * SuperSample;
+        var unit = pixelRatio * Rasterizer.SuperSample;
         var w = DisplayWidth * unit;
         var h = DisplayHeight * unit;
         var canvas = new byte[w * h * 4];
-        FillRect(canvas, w, 0, 0, w, h, Surface);
+        Rasterizer.FillRect(canvas, w, 0, 0, w, h, Surface);
 
         var maxDay = 0.0;
         for (var row = 0; row < WeekRows; row++)
@@ -137,14 +133,14 @@ internal static class TrendChartRenderer
                     continue;
                 }
 
-                FillRoundedRect(
+                Rasterizer.FillRoundedRect(
                     canvas, w,
                     (GridLeft + col * (CellSize + CellGap)) * unit, top,
                     CellSize * unit, CellSize * unit, CellCornerRadius * unit,
                     CellRamp[Level(dayCells[row, col], maxDay)]);
             }
 
-            FillRoundedRect(
+            Rasterizer.FillRoundedRect(
                 canvas, w,
                 TotalsLeft * unit, top,
                 CellSize * unit, CellSize * unit, CellCornerRadius * unit,
@@ -170,9 +166,9 @@ internal static class TrendChartRenderer
 
         var outWidth = DisplayWidth * pixelRatio;
         var outHeight = DisplayHeight * pixelRatio;
-        var pixels = Downsample(canvas, w, outWidth, outHeight);
+        var pixels = Rasterizer.Downsample(canvas, w, outWidth, outHeight);
         DrawBorder(pixels, outWidth, outHeight, pixelRatio);
-        return EncodePng(pixels, outWidth, outHeight);
+        return Rasterizer.EncodePng(pixels, outWidth, outHeight, BitmapAlphaMode.Ignore);
     }
 
     /// <summary>LESS → five ramp swatches → MORE, right-aligned under the grid, GitHub style.</summary>
@@ -186,7 +182,7 @@ internal static class TrendChartRenderer
 
         foreach (var color in CellRamp)
         {
-            FillRoundedRect(
+            Rasterizer.FillRoundedRect(
                 canvas, w,
                 pen * unit, LegendTop * unit,
                 LegendCell * unit, LegendCell * unit, CellCornerRadius / 2 * unit,
@@ -202,45 +198,6 @@ internal static class TrendChartRenderer
     private static int Level(double value, double max) =>
         value <= 0 || max <= 0 ? 0 : Math.Clamp((int)Math.Ceiling(value / max * (CellRamp.Length - 1)), 1, CellRamp.Length - 1);
 
-    private static void FillRect(byte[] canvas, int w, int left, int top, int width, int height, byte[] color)
-    {
-        for (var y = top; y < top + height; y++)
-        {
-            for (var x = left; x < left + width; x++)
-            {
-                var i = (y * w + x) * 4;
-                canvas[i] = color[0];
-                canvas[i + 1] = color[1];
-                canvas[i + 2] = color[2];
-                canvas[i + 3] = 0xFF;
-            }
-        }
-    }
-
-    private static void FillRoundedRect(byte[] canvas, int w, int left, int top, int width, int height, int radius, byte[] color)
-    {
-        for (var y = top; y < top + height; y++)
-        {
-            for (var x = left; x < left + width; x++)
-            {
-                // Corner test: within a corner square, the pixel must also fall
-                // inside the quarter-circle around that corner's center.
-                var dx = Math.Max(Math.Max(left + radius - x, x - (left + width - 1 - radius)), 0);
-                var dy = Math.Max(Math.Max(top + radius - y, y - (top + height - 1 - radius)), 0);
-                if (dx * dx + dy * dy > radius * radius)
-                {
-                    continue;
-                }
-
-                var i = (y * w + x) * 4;
-                canvas[i] = color[0];
-                canvas[i + 1] = color[1];
-                canvas[i + 2] = color[2];
-                canvas[i + 3] = 0xFF;
-            }
-        }
-    }
-
     private static void DrawText(byte[] canvas, int w, string text, int left, int top, int unit)
     {
         var pixel = GlyphScale * unit; // one font pixel, in canvas pixels
@@ -255,7 +212,7 @@ internal static class TrendChartRenderer
                     {
                         if (glyph[gy][gx] == '*')
                         {
-                            FillRect(canvas, w, pen + gx * pixel, top + gy * pixel, pixel, pixel, Label);
+                            Rasterizer.FillRect(canvas, w, pen + gx * pixel, top + gy * pixel, pixel, pixel, Label);
                         }
                     }
                 }
@@ -263,38 +220,6 @@ internal static class TrendChartRenderer
 
             pen += GlyphAdvance * unit;
         }
-    }
-
-    /// <summary>Box-filters the supersampled canvas down to the output size.</summary>
-    private static byte[] Downsample(byte[] canvas, int canvasWidth, int outWidth, int outHeight)
-    {
-        var pixels = new byte[outWidth * outHeight * 4];
-        for (var fy = 0; fy < outHeight; fy++)
-        {
-            for (var fx = 0; fx < outWidth; fx++)
-            {
-                int b = 0, g = 0, r = 0;
-                for (var sy = 0; sy < SuperSample; sy++)
-                {
-                    for (var sx = 0; sx < SuperSample; sx++)
-                    {
-                        var i = ((fy * SuperSample + sy) * canvasWidth + fx * SuperSample + sx) * 4;
-                        b += canvas[i];
-                        g += canvas[i + 1];
-                        r += canvas[i + 2];
-                    }
-                }
-
-                const int Samples = SuperSample * SuperSample;
-                var o = (fy * outWidth + fx) * 4;
-                pixels[o] = (byte)(b / Samples);
-                pixels[o + 1] = (byte)(g / Samples);
-                pixels[o + 2] = (byte)(r / Samples);
-                pixels[o + 3] = 0xFF;
-            }
-        }
-
-        return pixels;
     }
 
     private static void DrawBorder(byte[] pixels, int width, int height, int thickness)
@@ -315,19 +240,5 @@ internal static class TrendChartRenderer
                 pixels[i + 3] = 0xFF;
             }
         }
-    }
-
-    private static byte[] EncodePng(byte[] bgraPixels, int width, int height)
-    {
-        using var stream = new InMemoryRandomAccessStream();
-        var encoder = BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream).AsTask().GetAwaiter().GetResult();
-        encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Ignore, (uint)width, (uint)height, 96, 96, bgraPixels);
-        encoder.FlushAsync().AsTask().GetAwaiter().GetResult();
-
-        var bytes = new byte[(int)stream.Size];
-        using var reader = new DataReader(stream.GetInputStreamAt(0));
-        reader.LoadAsync((uint)bytes.Length).AsTask().GetAwaiter().GetResult();
-        reader.ReadBytes(bytes);
-        return bytes;
     }
 }
