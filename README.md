@@ -1,6 +1,6 @@
 # 📊 Claude Power Command Extension
 
-A [PowerToys Command Palette](https://aka.ms/PowerToysOverview_CommandPalette) extension that shows live **Claude Code subscription usage** as a tile in the Command Palette **Dock**, plus a detail page with session, weekly, and per-model progress bars.
+A [PowerToys Command Palette](https://aka.ms/PowerToysOverview_CommandPalette) extension that shows live **Claude Code subscription usage** as a tile in the Command Palette **Dock**, plus a tabbed detail page: usage bars, a what's-using-your-limits breakdown, and a monthly heatmap.
 
 It reads the OAuth token Claude Code already stores at `%USERPROFILE%\.claude\.credentials.json` and polls Anthropic's official usage endpoint. Nothing else leaves your machine — no telemetry, no third-party services.
 
@@ -12,7 +12,7 @@ Inspired by [omgapnt/ClaudeUsage](https://github.com/omgapnt/ClaudeUsage).
 - **Details page** — click the tile (or run the `Claude Usage Dock` command) for a full breakdown: session limit, 7-day all-model limit, and per-model weekly limits, each with a progress bar and reset time. Refresh from the command bar (Enter or Ctrl+R); account configuration is under More (Ctrl+K).
 - **Low-quota alert** — the tile icon gains a red alert badge when the session drops below a configurable threshold (20% by default), and a Windows toast notification fires the first time it crosses (can be turned off).
 - **Burn-rate estimate** — the details page projects when your session hits 0% at the current pace, based on a rolling local snapshot log.
-- **Weekly usage heatmap** — a GitHub-style heatmap of when you used Claude over the past 7 days (weekday rows × 3-hour columns), rendered beside the progress bars on the details page. History stays on your machine.
+- **Usage heatmaps & breakdown** — a monthly GitHub-style calendar heatmap on its own tab, plus a Breakdown tab with what's-using-your-limits statistics (last-24h burn, daily average, busiest period, weekly pace projection) and a when-during-the-week heatmap. All computed from a rolling snapshot log that stays on your machine.
 - **Token auto-refresh** — when the stored Claude Code token expires, the extension refreshes it itself (and writes it back for Claude Code), so the tile keeps working overnight.
 - **Multiple accounts** — monitor up to two additional Claude accounts by pointing extra profiles at separately saved credential files, each with its own dock tile, command, and history.
 - **Settings** — refresh interval, alert threshold, toast notifications, and additional account profiles are editable from the extension's Settings page in Command Palette.
@@ -53,13 +53,13 @@ Then open Command Palette (`Win+Alt+Space`) → **Settings → Dock** → add th
 
 ### 📋 The details page
 
-Open it by clicking the dock tile or running **Claude Usage Dock** from Command Palette search. It shows:
+Open it by clicking the dock tile or running **Claude Usage Dock** from Command Palette search. The page has three sections, switched by the tab buttons at the top of the card:
 
-- Your **plan type** (read from Claude Code's local credentials) and when the data was last checked.
-- **5-hour session** — your current session window and when it resets, with a projection of when it runs out at your current pace (shown once ~15 minutes of history exists).
-- **7-day (all models)** — the weekly cap across every model. Once enough history has accumulated (~6 hours), a GitHub-style usage heatmap appears beside the bars showing when during the week the quota was spent.
-- **7-day per model** — individual weekly caps (e.g. Opus), when your plan has them.
-- A **Refresh** command in the bottom command bar (Enter or Ctrl+R) to re-query immediately, bypassing the snapshot cache, and a **Configure accounts** entry under More (Ctrl+K) that opens the extension's settings.
+- **Usage** — progress bars for the **5-hour session** window, the **7-day (all models)** cap, and any **per-model weekly caps** (e.g. Opus), each with a relative reset time ("resets in 3 h 05 m"). The session bar gains a projection of when it runs out at your current pace once ~15 minutes of history exists, and an Account block lists your plan, profile, and when the data was last checked.
+- **Breakdown** — what's using your limits, computed from the local history log: weekly-quota burn over the last 24 hours, your daily average, your busiest weekday/time slot, a pace projection for the weekly cap, per-model usage, and a small heatmap of *when* during the week you use Claude. Approximate, and local to this machine — usage from other devices only shows up in the percentages, not the statistics.
+- **Heatmap** — a monthly GitHub-style calendar: five week rows by weekday columns, month labels, a WK column of week totals, and a month total. Cells shade by how much of the weekly quota was burned that day. Appears after ~6 hours of collected history and fills out over the weeks.
+
+The bottom command bar has a **Refresh** command (Enter or Ctrl+R) to re-query immediately, bypassing the snapshot cache, and a **Configure accounts** entry under More (Ctrl+K) that opens the extension's settings.
 
 ### 👥 Multiple accounts
 
@@ -90,14 +90,14 @@ ClaudeUsageDock/
   Services/
     ClaudeUsageService.cs       credentials + token refresh, Anthropic usage API client
     UsageHistoryStore.cs        rolling local snapshot log (burn rate + trend graph)
-    TrendChartRenderer.cs       GitHub-style weekly usage heatmap PNG (no drawing-library deps)
+    TrendChartRenderer.cs       GitHub-style weekly + monthly heatmap PNGs (no drawing-library deps)
     SettingsManager.cs          user settings (interval, threshold, toasts)
     ToastNotifier.cs            low-quota Windows notification
     DebugLogger.cs              opt-in file logging
   Dock/
     UsageDockBand.cs            the dock tile (title/subtitle/icon per refresh)
   Pages/
-    UsageDetailsPage.cs         full stats page: progress bars, estimate, trend graph
+    UsageDetailsPage.cs         tabbed stats page: Usage / Breakdown / Heatmap
   Assets/                       app tile logos + status icons
 scripts/
   BuildTools.ps1                 shared publish/stage/pack/sign helpers (dev + CI)

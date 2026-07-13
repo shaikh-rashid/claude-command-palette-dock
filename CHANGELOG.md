@@ -5,7 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.9.0] - 2026-07-13
+
+### Added
+
+- The details page is now organized as three tabbed sections, switched by a button strip at the top of the card (AdaptiveCards has no native tab control, so the strip is three submit buttons and a switch re-renders the page):
+  - **Usage** — the limit bars (session, weekly, per-model) with the burn-rate note, now full-width and showing relative reset times ("resets in 3 h 05 m"), plus an Account facts block (plan, profile, auth method, last checked).
+  - **Breakdown** — "What's using your limits?", derived from the local history log: weekly-quota burn over the last 24 h, daily average, busiest weekday/3-hour period, a pace projection for the weekly cap ("runs out around Thu 6 PM" / "lasts until it resets"), the per-model weekly caps, and the when-do-you-use-Claude weekly heatmap.
+  - **Heatmap** — the monthly GitHub-style calendar heatmap returns from v0.8.0 (five Monday-aligned week rows × weekday columns headed M T W T F S S, month labels where a month starts, a separated WK week-totals column, and a month-total line). Unlike 0.8.0 it no longer displaces the weekly view — each layout now has its own home.
+
+### Changed
+
+- `TrendChartRenderer` hosts both heatmap layouts (`RenderWeekly`, `RenderMonthly`) sharing one drawing core, font, and palette.
 
 ### Fixed
 
