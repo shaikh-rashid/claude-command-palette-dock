@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Both release pipelines now fail fast with a message naming the missing secret when `RELEASE_PFX_BASE64` or `RELEASE_PFX_PASSWORD` doesn't reach the job (unset, or on GitLab marked Protected while the tag isn't a protected tag). Previously an empty password surfaced late as an opaque `Cannot bind argument to parameter 'PfxPassword' because it is an empty string`, followed by missing-artifact noise from the upload steps — this is what failed the v0.8.2 GitLab pipeline, since GitHub secrets and GitLab CI/CD variables are separate stores.
 - The GitLab `dependency_audit` job failed with NETSDK1100: restoring a `net9.0-windows`-TFM project on the job's Linux SDK image requires `EnableWindowsTargeting=true`. It's now set as a job-level variable (an environment variable) rather than a `-p:` flag, because `dotnet list package` doesn't accept MSBuild property arguments while MSBuild does pick the property up from the environment for both commands. Reproduced and verified end-to-end in the same `mcr.microsoft.com/dotnet/sdk:9.0` image CI uses: restore succeeds and the audit reports no vulnerable packages.
 
 ## [0.8.2] - 2026-07-12
