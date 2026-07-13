@@ -197,32 +197,36 @@ internal sealed class UsageDetailsPage : ContentPage
     /// </summary>
     private void AppendUsageSection(JsonArray body, ClaudeUsageSnapshot snapshot)
     {
-        AddBar(body, "5-hour limit", 100 - snapshot.SessionRemainingPercent, snapshot.SessionResetsAt);
+        AddBar(body, "5-hour limit", snapshot.SessionRemainingPercent, snapshot.SessionResetsAt);
         if (DescribeBurnRate(snapshot) is { } burnNote)
         {
             body.Add(SubtleText(burnNote, spacing: "Small"));
         }
 
-        AddBar(body, "Weekly · all models", 100 - snapshot.WeeklyRemainingPercent, snapshot.WeeklyResetsAt);
+        AddBar(body, "Weekly · all models", snapshot.WeeklyRemainingPercent, snapshot.WeeklyResetsAt);
         foreach (var model in snapshot.PerModelWeekly)
         {
-            AddBar(body, $"Weekly · {model.DisplayName}", model.PercentUsed, model.ResetsAt);
+            AddBar(body, $"Weekly · {model.DisplayName}", 100 - model.PercentUsed, model.ResetsAt);
         }
     }
 
     /// <summary>
     /// One usage row: bold label on the left, subtle reset time and bold percent
-    /// used on the right, and underneath a thin rendered progress bar whose color
-    /// shifts as usage approaches the limit.
+    /// remaining on the right, and underneath a thin rendered progress bar sized to
+    /// what's left, whose color shifts as the remaining quota runs low. The reset
+    /// time and percent are two separate auto-width columns (rather than one string
+    /// with a manual gap of literal spaces) so the visual gap between them is a
+    /// fixed column spacing instead of font-dependent kerning. The text row and the
+    /// bar image both sit inside one column fixed at the bar's own render width, so
+    /// the card's full (wider) width can't stretch the text past where the bar ends.
     /// </summary>
-    private static void AddBar(JsonArray body, string label, double usedPercent, DateTimeOffset resetsAt)
+    private static void AddBar(JsonArray body, string label, double remainingPercent, DateTimeOffset resetsAt)
     {
-        var used = (int)Math.Round(Math.Clamp(usedPercent, 0, 100));
+        var remaining = (int)Math.Round(Math.Clamp(remainingPercent, 0, 100));
 
-        body.Add(new JsonObject
+        var textRow = new JsonObject
         {
             ["type"] = "ColumnSet",
-            ["spacing"] = "Medium",
             ["columns"] = new JsonArray
             {
                 new JsonObject
@@ -249,25 +253,54 @@ internal sealed class UsageDetailsPage : ContentPage
                     {
                         new JsonObject
                         {
-                            ["type"] = "RichTextBlock",
+                            ["type"] = "TextBlock",
+                            ["text"] = FormatReset(resetsAt),
+                            ["isSubtle"] = true,
                             ["horizontalAlignment"] = "Right",
-                            ["inlines"] = new JsonArray
-                            {
-                                new JsonObject { ["type"] = "TextRun", ["text"] = FormatReset(resetsAt), ["isSubtle"] = true },
-                                new JsonObject { ["type"] = "TextRun", ["text"] = $"  {used}%", ["weight"] = "Bolder" },
-                            },
+                        },
+                    },
+                },
+                new JsonObject
+                {
+                    ["type"] = "Column",
+                    ["width"] = "auto",
+                    ["spacing"] = "Medium",
+                    ["verticalContentAlignment"] = "Bottom",
+                    ["items"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["type"] = "TextBlock",
+                            ["text"] = $"{remaining}%",
+                            ["weight"] = "Bolder",
                         },
                     },
                 },
             },
-        });
-        body.Add(new JsonObject
+        };
+
+        var barImage = new JsonObject
         {
             ["type"] = "Image",
-            ["url"] = $"data:image/png;base64,{Convert.ToBase64String(BarRenderer.Render(used))}",
+            ["url"] = $"data:image/png;base64,{Convert.ToBase64String(BarRenderer.Render(remaining))}",
             ["width"] = $"{BarRenderer.DisplayWidth}px",
-            ["altText"] = $"{label}: {used}% used",
+            ["altText"] = $"{label}: {remaining}% remaining",
             ["spacing"] = "Small",
+        };
+
+        body.Add(new JsonObject
+        {
+            ["type"] = "ColumnSet",
+            ["spacing"] = "Medium",
+            ["columns"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["type"] = "Column",
+                    ["width"] = $"{BarRenderer.DisplayWidth}px",
+                    ["items"] = new JsonArray { textRow, barImage },
+                },
+            },
         });
     }
 
