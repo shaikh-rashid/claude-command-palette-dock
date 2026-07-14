@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.1] - 2026-07-13
+
+### Fixed
+
+- The release build loaded the signing PFX with the default key-storage flags, which persist the private key to the on-disk user key container; the GitLab SaaS Windows runner's job context can't write there, so `X509Certificate2`'s constructor threw `Access denied` before the build even started (and the upload steps then failed on the artifacts that were never produced). It now loads with `EphemeralKeySet` — the key stays in memory, which is all that object needs since it's only read for its subject/thumbprint and to export the public `.cer`, while `signtool` does the actual signing straight from the PFX path. This is what failed the v0.9.0 release pipeline.
+
 ## [0.9.0] - 2026-07-13
 
 ### Added
@@ -25,7 +31,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `build-and-install.ps1` now preserves the local usage history across a same-version reinstall. Sideloading the same version with different contents (the normal dev-iteration case) needs an uninstall-then-reinstall to dodge `0x80073CFB`, but that full uninstall deletes the package's `LocalState` — wiping the history log the Breakdown and Heatmap tabs are built from. The script backs `LocalState` up before removing the package and restores it after, so history survives a rebuild the way it would across a real version-bump upgrade.
-- The release build loaded the signing PFX with the default key-storage flags, which persist the private key to the on-disk user key container; the GitLab SaaS Windows runner's job context can't write there, so `X509Certificate2`'s constructor threw `Access denied` before the build even started (and the upload steps then failed on the artifacts that were never produced). It now loads with `EphemeralKeySet` — the key stays in memory, which is all that object needs since it's only read for its subject/thumbprint and to export the public `.cer`, while `signtool` does the actual signing straight from the PFX path.
 - Both release pipelines now fail fast with a message naming the missing secret when `RELEASE_PFX_BASE64` or `RELEASE_PFX_PASSWORD` doesn't reach the job (unset, or on GitLab marked Protected while the tag isn't a protected tag). Previously an empty password surfaced late as an opaque `Cannot bind argument to parameter 'PfxPassword' because it is an empty string`, followed by missing-artifact noise from the upload steps — this is what failed the v0.8.2 GitLab pipeline, since GitHub secrets and GitLab CI/CD variables are separate stores.
 - The GitLab `dependency_audit` job failed with NETSDK1100: restoring a `net9.0-windows`-TFM project on the job's Linux SDK image requires `EnableWindowsTargeting=true`. It's now set as a job-level variable (an environment variable) rather than a `-p:` flag, because `dotnet list package` doesn't accept MSBuild property arguments while MSBuild does pick the property up from the environment for both commands. Reproduced and verified end-to-end in the same `mcr.microsoft.com/dotnet/sdk:9.0` image CI uses: restore succeeds and the audit reports no vulnerable packages.
 
