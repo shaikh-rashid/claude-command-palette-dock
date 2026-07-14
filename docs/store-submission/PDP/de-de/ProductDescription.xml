@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ProductDescription language="de-de"
+    xmlns="http://schemas.microsoft.com/appx/2012/ProductDescription"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <AppStoreName>Claude Usage Dock</AppStoreName>
+  <Keywords>
+    <Keyword>claude</Keyword>
+    <Keyword>claude code</Keyword>
+    <Keyword>verbrauch</Keyword>
+    <Keyword>powertoys</Keyword>
+    <Keyword>command palette</Keyword>
+    <Keyword>kontingent</Keyword>
+    <Keyword>dock</Keyword>
+  </Keywords>
+  <Description>Claude Usage Dock ist eine PowerToys Command Palette-Erweiterung, die Ihren Claude Code-Abonnementverbrauch im Blick behält. Eine Dock-Kachel zeigt live, wie viel von Ihrem 5-Stunden-Sitzungslimit und Ihrem Wochenlimit übrig ist; ein Klick öffnet eine Detailseite mit Verbrauchsbalken, einer Schätzung, wann die Sitzung aufgebraucht ist, einer Aufschlüsselung Ihres Verbrauchs und einer Monats-Heatmap. Die Erweiterung nutzt das Token, das Claude Code bereits auf Ihrem PC speichert, und kommuniziert ausschließlich mit den offiziellen Anthropic-Endpunkten - keine Telemetrie, keine Dritten; Ihr Verlauf bleibt in einer lokalen Datei. Erfordert PowerToys mit der Command Palette und eine angemeldete Claude Code-Installation.</Description>
+  <ShortDescription>Behalten Sie Ihren Claude Code-Verbrauch direkt im PowerToys Command Palette-Dock im Blick.</ShortDescription>
+  <ReleaseNotes>Erste stabile Version. Verbrauchsbalken zeigen jetzt den verbleibenden Prozentsatz, mit einer Detailseite mit Registerkarten (Nutzung, Aufschlüsselung, Heatmap). Lokalisiert in Englisch, Deutsch, Französisch, Spanisch, Japanisch und vereinfachtem Chinesisch.</ReleaseNotes>
+  <ScreenshotCaptions>
+    <Caption DesktopImage="01-dock-tile.png">Die Dock-Kachel zeigt Ihre verbleibende Sitzungs- und Wochennutzung auf einen Blick.</Caption>
+    <Caption DesktopImage="02-usage.png">Farbcodierte Balken für Sitzungs-, Wochen- und Modell-Limits, jeweils mit Reset-Zeit.</Caption>
+    <Caption DesktopImage="03-breakdown.png">Sehen Sie, was Ihren Verbrauch treibt: letzte 24 h, Tagesschnitt und aktivste Zeit.</Caption>
+    <Caption DesktopImage="04-heatmap.png">Eine monatliche Heatmap Ihrer täglichen Nutzung im GitHub-Kalender-Stil.</Caption>
+  </ScreenshotCaptions>
+  <AppFeatures>
+    <AppFeature>Live-Dock-Kachel mit verbleibender Sitzungs- und Wochennutzung</AppFeature>
+    <AppFeature>Detailseite mit farbcodierten Verbrauchsbalken und Reset-Zeiten</AppFeature>
+    <AppFeature>Schätzung, wann die Sitzung aufgebraucht ist</AppFeature>
+    <AppFeature>Verbrauchsaufschlüsselung: letzte 24 h, Tagesschnitt, aktivste Zeit</AppFeature>
+    <AppFeature>Monatliche Nutzungs-Heatmap im GitHub-Stil</AppFeature>
+    <AppFeature>Benachrichtigung bei niedrigem Kontingent mit einstellbarer Schwelle</AppFeature>
+    <AppFeature>Bis zu drei Claude-Konten überwachen</AppFeature>
+    <AppFeature>Datenschutzfreundlich: keine Telemetrie, nur Anthropic</AppFeature>
+  </AppFeatures>
+  <WebsiteURL>https://github.com/shaikh-rashid/claude-command-palette-dock</WebsiteURL>
+  <SupportContactInfo>https://github.com/shaikh-rashid/claude-command-palette-dock/issues</SupportContactInfo>
+  <PrivacyPolicyURL>https://github.com/shaikh-rashid/claude-command-palette-dock/blob/main/PRIVACY.md</PrivacyPolicyURL>
+</ProductDescription>
