@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.2] - 2026-07-13
+
+### Fixed
+
+- The release signing then failed one step later, in `signtool` itself, with `0x80090010` ("Store::ImportCertObject() failed" — `NTE_PERM`): signing straight from the PFX (`signtool /f /p`) makes signtool import the key into the per-user key container the hosted runner denies, the same access problem the certificate load hit. The CI signing path now imports the PFX into a certificate store itself and signs by thumbprint — preferring `LocalMachine` (a machine key container the admin runner can write, no user profile needed) and falling back to `CurrentUser` — which sidesteps signtool's own import. Local `build-and-install.ps1` sideloads still sign straight from the PFX, which works with a real interactive profile.
+
+### Added
+
+- A manual `verify_signing` CI job that runs the exact build-and-sign path on a default-branch pipeline without tagging or publishing. Because protected release tags can't be moved or deleted via git, every tagged attempt otherwise burns a version; this lets the signing be dry-run and iterated on `main` (Pipelines → the latest main pipeline → play `verify_signing`) so a tag is only spent once signing is known green. The tagged release and the dry run share one job template, so they can't drift.
+
 ## [0.9.1] - 2026-07-13
 
 ### Fixed

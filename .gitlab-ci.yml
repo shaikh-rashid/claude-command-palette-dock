@@ -74,10 +74,45 @@ dependency_audit:
         exit 1
       fi
 
-build_and_sign:
+# Shared setup for the two Windows signing jobs — the real tagged release
+# (build_and_sign) and the manual dry run (verify_signing). Both run the same
+# signing code (scripts/ci-build-release.ps1), so a green dry run on the default
+# branch means a tag build will sign too. That lets the signing be iterated
+# without spending a version tag each attempt — protected release tags can't be
+# moved or deleted via git, so every tagged try otherwise burns a version.
+.windows_release_base:
   stage: build
   tags:
     - saas-windows-medium-amd64
+  before_script:
+    - |
+      $ErrorActionPreference = "Stop"
+
+      # Fail fast if the one-time-setup CI/CD variables aren't reaching the job.
+      # An empty value means they were never added (Settings -> CI/CD ->
+      # Variables, see the header of this file), or they're marked Protected
+      # while the ref isn't protected — GitLab silently withholds Protected
+      # variables from unprotected refs. Both the release tags and the default
+      # branch must be protected for their pipelines to see them (the default
+      # branch is protected by default; protect v* tags under Settings ->
+      # Repository -> Protected tags).
+      foreach ($name in "RELEASE_PFX_BASE64", "RELEASE_PFX_PASSWORD") {
+        if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
+          throw "CI/CD variable $name is empty or unset in this job. Add it under Settings -> CI/CD -> Variables, and make sure this ref is protected so a Protected variable reaches it."
+        }
+      }
+
+      # Install the .NET SDK pinned in global.json — GitLab's shared Windows
+      # runners don't reliably ship a matching preinstalled version.
+      Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile "$env:CI_PROJECT_DIR\dotnet-install.ps1"
+      & "$env:CI_PROJECT_DIR\dotnet-install.ps1" -JsonFile global.json -InstallDir "$env:CI_PROJECT_DIR\.dotnet"
+      $env:PATH = "$env:CI_PROJECT_DIR\.dotnet;$env:PATH"
+
+      $bytes = [Convert]::FromBase64String($env:RELEASE_PFX_BASE64)
+      [IO.File]::WriteAllBytes((Join-Path $env:CI_PROJECT_DIR "release.pfx"), $bytes)
+
+build_and_sign:
+  extends: .windows_release_base
   rules:
     - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
   variables:
@@ -92,32 +127,8 @@ build_and_sign:
         throw "Tag $env:CI_COMMIT_TAG (version $version) does not match the VERSION file ($fileVersion). Bump VERSION and Package.appxmanifest before tagging a release."
       }
 
-      # Fail fast if the one-time-setup CI/CD variables aren't reaching the job.
-      # An empty value means they were never added (Settings -> CI/CD ->
-      # Variables, see the header of this file), or they're marked Protected
-      # while this tag isn't a protected tag — GitLab silently withholds
-      # Protected variables from unprotected refs.
-      foreach ($name in "RELEASE_PFX_BASE64", "RELEASE_PFX_PASSWORD") {
-        if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
-          throw "CI/CD variable $name is empty or unset in this job. Add it under Settings -> CI/CD -> Variables; if it is marked Protected, protect the release tags too (Settings -> Repository -> Protected tags, pattern v*)."
-        }
-      }
-
-      # Install the .NET SDK pinned in global.json — GitLab's shared Windows
-      # runners don't reliably ship a matching preinstalled version.
-      Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile "$env:CI_PROJECT_DIR\dotnet-install.ps1"
-      & "$env:CI_PROJECT_DIR\dotnet-install.ps1" -JsonFile global.json -InstallDir "$env:CI_PROJECT_DIR\.dotnet"
-      $env:PATH = "$env:CI_PROJECT_DIR\.dotnet;$env:PATH"
-
-      . .\scripts\BuildTools.ps1
-      Assert-WindowsSdkPlatform -PlatformVersion "10.0.26100.0"
-
-      $bytes = [Convert]::FromBase64String($env:RELEASE_PFX_BASE64)
       $pfxPath = Join-Path $env:CI_PROJECT_DIR "release.pfx"
-      [IO.File]::WriteAllBytes($pfxPath, $bytes)
-
       .\scripts\ci-build-release.ps1 -PfxPath $pfxPath -PfxPassword $env:RELEASE_PFX_PASSWORD -OutputDir release-output
-
       Remove-Item $pfxPath -Force
 
       # Changelog section for this version becomes the release description.
@@ -139,6 +150,29 @@ build_and_sign:
       - release-output/
       - release-notes.md
     expire_in: 1 week
+
+# On-demand dry run of the exact build+sign path, without a tag, upload, or
+# release. Trigger it by hand from a default-branch pipeline (Pipelines -> the
+# latest main pipeline -> play the "verify_signing" job) to confirm the MSIX
+# signs on the runner before spending a release tag. allow_failure keeps a red
+# dry run from failing the branch pipeline.
+verify_signing:
+  extends: .windows_release_base
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+      allow_failure: true
+  script:
+    - |
+      $ErrorActionPreference = "Stop"
+      $pfxPath = Join-Path $env:CI_PROJECT_DIR "release.pfx"
+      .\scripts\ci-build-release.ps1 -PfxPath $pfxPath -PfxPassword $env:RELEASE_PFX_PASSWORD -OutputDir release-output
+      Remove-Item $pfxPath -Force
+      Write-Host "Signing dry run succeeded — release-output\ClaudeUsageDock.msix is signed. Safe to tag this commit for release."
+  artifacts:
+    paths:
+      - release-output/
+    expire_in: 1 day
 
 create_release:
   stage: release

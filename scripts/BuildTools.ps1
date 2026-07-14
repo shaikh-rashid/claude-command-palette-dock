@@ -74,10 +74,53 @@ function Set-MsixSignature {
     param(
         [Parameter(Mandatory)][string]$MsixPath,
         [Parameter(Mandatory)][string]$PfxPath,
-        [Parameter(Mandatory)][string]$PfxPassword
+        [Parameter(Mandatory)][string]$PfxPassword,
+        # On GitLab's hosted Windows runners, signtool's own /f PFX import fails
+        # with 0x80090010 (NTE_PERM, "Store::ImportCertObject() failed") — the
+        # job context can't create the per-user key container it wants. When set,
+        # import the PFX into a certificate store here and sign by thumbprint
+        # instead, which sidesteps signtool's internal import. Local dev leaves
+        # this off and signs straight from the PFX, which works with a real
+        # interactive user profile.
+        [switch]$ViaCertStore
     )
 
     $signToolExe = Find-WindowsKitTool -ToolName "signtool.exe"
+
+    if ($ViaCertStore) {
+        $securePassword = ConvertTo-SecureString -String $PfxPassword -Force -AsPlainText
+        # Prefer LocalMachine: its key lives in the machine key container, which
+        # the admin runner can write and which doesn't depend on a loaded user
+        # profile (the per-user container is what's denied). Fall back to
+        # CurrentUser if the machine store is refused.
+        $storeLocation = "Cert:\LocalMachine\My"
+        $useMachineStore = $true
+        try {
+            $imported = Import-PfxCertificate -FilePath $PfxPath -CertStoreLocation $storeLocation -Password $securePassword
+        }
+        catch {
+            Write-Host "LocalMachine PFX import failed ($($_.Exception.Message)); falling back to the CurrentUser store."
+            $storeLocation = "Cert:\CurrentUser\My"
+            $useMachineStore = $false
+            $imported = Import-PfxCertificate -FilePath $PfxPath -CertStoreLocation $storeLocation -Password $securePassword
+        }
+
+        try {
+            # /sm makes signtool search the machine store; omit it for CurrentUser.
+            $storeArgs = if ($useMachineStore) { @("/sm") } else { @() }
+            # Don't pipe to Out-Null: signtool writes "Error information:
+            # SignerSign() failed" diagnostics to stdout, and hiding them cost a
+            # CI debugging round.
+            & $signToolExe sign /fd SHA256 @storeArgs /sha1 $imported.Thumbprint $MsixPath
+            if ($LASTEXITCODE -ne 0) { throw "signtool failed" }
+        }
+        finally {
+            Remove-Item -Path (Join-Path $storeLocation $imported.Thumbprint) -Force -ErrorAction SilentlyContinue
+        }
+
+        return
+    }
+
     # Don't pipe to Out-Null: signtool writes "Error information: SignerSign()
     # failed" diagnostics to stdout, and hiding them cost a CI debugging round.
     & $signToolExe sign /fd SHA256 /a /f $PfxPath /p $PfxPassword $MsixPath
