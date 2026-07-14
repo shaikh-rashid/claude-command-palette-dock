@@ -3,12 +3,18 @@
 Everything needed to fill the Microsoft Store listing for **Claude Usage Dock**,
 in one folder, for all six languages.
 
-> **Reality check:** Partner Center's *web UI* has no "upload a folder to
-> auto-fill" button. The supported way to fill a listing from a folder like this
-> is **[StoreBroker](https://github.com/microsoft/StoreBroker)**, Microsoft's
-> tool that drives the Store submission API. This folder is laid out for it. If
-> you'd rather fill the web form by hand, everything is also in `source/` as CSVs
-> to copy/paste from.
+There are two ways to fill the listing from a folder:
+
+1. **Partner Center's native "Import listings → Upload folder"** (simplest) — its
+   import CSV is a transposed template whose `ID` column is assigned per app, so
+   you **Export listing** from Partner Center first, then run
+   [`scripts\fill-store-listing-csv.ps1`](../../scripts/fill-store-listing-csv.ps1)
+   over the export to produce an upload-ready folder (`docs\store-import\`). See
+   [../DISTRIBUTION.md](../DISTRIBUTION.md#bulk-fill-the-listing-import-listings).
+2. **[StoreBroker](https://github.com/microsoft/StoreBroker)** (API automation) —
+   consumes *this* folder's PDP files directly, no export needed. Covered below.
+
+Either way, `source/` also holds the plain CSVs for manual copy/paste.
 
 ## Layout
 
