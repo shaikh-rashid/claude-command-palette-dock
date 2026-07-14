@@ -50,7 +50,7 @@ Write-Host "Staging and packing MSIX..."
 New-MsixPackage -ProjectDir $projectDir -PublishDir $publishDir -StagingDir $stagingDir -OutputMsixPath $msixPath -PublisherOverride $cert.Subject
 
 Write-Host "Signing MSIX..."
-Set-MsixSignature -MsixPath $msixPath -PfxPath $PfxPath -PfxPassword $PfxPassword
+Set-MsixSignature -MsixPath $msixPath -PfxPath $PfxPath -PfxPassword $PfxPassword -ViaCertStore
 
 Write-Host "Exporting the public certificate for users to trust..."
 Export-Certificate -Cert $cert -FilePath $certPath | Out-Null
