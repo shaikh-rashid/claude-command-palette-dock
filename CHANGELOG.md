@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - The 0.9.2 cert-store signing then handed `signtool` a malformed argument (`SignTool Error: Invalid option: /`): the `/sm` store flag was spliced in with inline array splatting mixed among literal arguments, which PowerShell's native-command handling mangled. The signing command is now built as one flat argument array and passed as a whole, and the resolved command line is echoed to the job log so any future argument problem is visible at a glance.
+- The GitLab release job's `Invoke-WebRequest` calls now pass `-UseBasicParsing`. The shared Windows runner is Windows PowerShell 5.1, whose `Invoke-WebRequest` otherwise routes response parsing through the IE engine and fails ("Internet Explorer engine is not available") — a latent break in the artifact-upload step that the sign-only dry run wouldn't have surfaced.
+- The manual `verify_signing` dry run now also performs the package-registry upload (to a throwaway `dry-run` path), so a green dry run proves the whole release path — sign and upload — rather than signing alone, and no step is first exercised only on a real (version-spending) tag build.
 
 ## [0.9.2] - 2026-07-13
 

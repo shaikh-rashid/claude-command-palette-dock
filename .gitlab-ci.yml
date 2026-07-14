@@ -104,7 +104,10 @@ dependency_audit:
 
       # Install the .NET SDK pinned in global.json — GitLab's shared Windows
       # runners don't reliably ship a matching preinstalled version.
-      Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile "$env:CI_PROJECT_DIR\dotnet-install.ps1"
+      # -UseBasicParsing: the runner is Windows PowerShell 5.1, whose
+      # Invoke-WebRequest otherwise tries to parse responses through the IE
+      # engine and fails ("Internet Explorer engine is not available").
+      Invoke-WebRequest -UseBasicParsing -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile "$env:CI_PROJECT_DIR\dotnet-install.ps1"
       & "$env:CI_PROJECT_DIR\dotnet-install.ps1" -JsonFile global.json -InstallDir "$env:CI_PROJECT_DIR\.dotnet"
       $env:PATH = "$env:CI_PROJECT_DIR\.dotnet;$env:PATH"
 
@@ -141,21 +144,24 @@ build_and_sign:
       $section -join "`n" | Out-File -FilePath release-notes.md -Encoding utf8
 
       # Upload both artifacts to the generic package registry so the release
-      # job (a different runner) can link to them.
+      # job (a different runner) can link to them. -UseBasicParsing is required
+      # on the PS 5.1 runner (see the SDK download note in the base job).
       $headers = @{ "JOB-TOKEN" = $env:CI_JOB_TOKEN }
-      Invoke-WebRequest -Uri "$env:PACKAGE_REGISTRY_URL/ClaudeUsageDock.msix" -Method Put -Headers $headers -InFile "release-output\ClaudeUsageDock.msix"
-      Invoke-WebRequest -Uri "$env:PACKAGE_REGISTRY_URL/ClaudeUsageDock-Release.cer" -Method Put -Headers $headers -InFile "release-output\ClaudeUsageDock-Release.cer"
+      Invoke-WebRequest -UseBasicParsing -Uri "$env:PACKAGE_REGISTRY_URL/ClaudeUsageDock.msix" -Method Put -Headers $headers -InFile "release-output\ClaudeUsageDock.msix"
+      Invoke-WebRequest -UseBasicParsing -Uri "$env:PACKAGE_REGISTRY_URL/ClaudeUsageDock-Release.cer" -Method Put -Headers $headers -InFile "release-output\ClaudeUsageDock-Release.cer"
   artifacts:
     paths:
       - release-output/
       - release-notes.md
     expire_in: 1 week
 
-# On-demand dry run of the exact build+sign path, without a tag, upload, or
-# release. Trigger it by hand from a default-branch pipeline (Pipelines -> the
-# latest main pipeline -> play the "verify_signing" job) to confirm the MSIX
-# signs on the runner before spending a release tag. allow_failure keeps a red
-# dry run from failing the branch pipeline.
+# On-demand dry run of the release path — build, sign, and a throwaway upload —
+# without a tag or an actual release. Trigger it by hand from a default-branch
+# pipeline (Pipelines -> the latest main pipeline -> play the "verify_signing"
+# job) to confirm the MSIX signs and uploads on the runner before spending a
+# release tag. It deliberately exercises the same package-registry PUT the
+# tagged job does (to a "dry-run" path) so nothing in the release path is left
+# untested. allow_failure keeps a red dry run from failing the branch pipeline.
 verify_signing:
   extends: .windows_release_base
   rules:
@@ -168,7 +174,15 @@ verify_signing:
       $pfxPath = Join-Path $env:CI_PROJECT_DIR "release.pfx"
       .\scripts\ci-build-release.ps1 -PfxPath $pfxPath -PfxPassword $env:RELEASE_PFX_PASSWORD -OutputDir release-output
       Remove-Item $pfxPath -Force
-      Write-Host "Signing dry run succeeded — release-output\ClaudeUsageDock.msix is signed. Safe to tag this commit for release."
+
+      # Same upload the tagged release does, to a throwaway "dry-run" registry
+      # path, so a green dry run also proves the upload step (and its
+      # -UseBasicParsing requirement) end to end.
+      $headers = @{ "JOB-TOKEN" = $env:CI_JOB_TOKEN }
+      $dryRunUrl = "$env:CI_API_V4_URL/projects/$env:CI_PROJECT_ID/packages/generic/release-assets/dry-run"
+      Invoke-WebRequest -UseBasicParsing -Uri "$dryRunUrl/ClaudeUsageDock.msix" -Method Put -Headers $headers -InFile "release-output\ClaudeUsageDock.msix"
+
+      Write-Host "Signing + upload dry run succeeded — safe to tag this commit for release."
   artifacts:
     paths:
       - release-output/
