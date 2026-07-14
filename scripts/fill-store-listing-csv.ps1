@@ -57,10 +57,10 @@ foreach ($row in $listings) {
 $rows = @(Import-Csv -LiteralPath $ExportedCsv)
 if ($rows.Count -eq 0) { throw "The exported CSV '$ExportedCsv' is empty." }
 $orig = @($rows[0].PSObject.Properties.Name)
-foreach ($req in "Field", "ID", "Type") {
-    if ($orig -notcontains $req) {
-        throw "'$ExportedCsv' doesn't look like a Partner Center listing export (no '$req' column). Export it from the app overview -> Store listings -> Export listing."
-    }
+# The Type column header is exported as "Type (Type)", so only require the two
+# columns this script actually reads/keys on.
+if ($orig -notcontains "Field" -or $orig -notcontains "ID") {
+    throw "'$ExportedCsv' doesn't look like a Partner Center listing export (no 'Field'/'ID' column). Export it from the app overview -> Store listings -> Export listing."
 }
 
 # Final column set = the export's columns + any of our language columns it lacks.
@@ -86,7 +86,9 @@ foreach ($row in $rows) {
         '^Description$' { Set-AllLangs $row { param($l) $data[$l].Description }; break }
         '^ShortDescription$' { Set-AllLangs $row { param($l) $data[$l].ShortDescription }; break }
         '^ReleaseNotes$' { Set-AllLangs $row { param($l) $data[$l].ReleaseNotes }; break }
-        '^Title$' { Set-AllLangs $row { param($l) $data[$l].Title }; break }
+        # Title is intentionally left alone: every language here has a package, so
+        # the Store derives the name from it. Filling Title risks a reserved-name
+        # mismatch, and it's only required for languages without a package.
         '^Feature(\d+)$' {
             $i = [int]$Matches[1] - 1
             if ($i -lt $data[$defaultLocale].Features.Count) { Set-AllLangs $row { param($l) if ($i -lt $data[$l].Features.Count) { $data[$l].Features[$i] } else { $null } } } else { $filled = $false }
@@ -102,7 +104,7 @@ foreach ($row in $rows) {
             if ($i -lt $shotFiles.Count) { Set-Cell $row 'default' "$folderName/$($shotFiles[$i])" } else { $filled = $false }
             break
         }
-        '^(Desktop)?Screenshot(\d+)Caption$' {
+        '^(Desktop)?ScreenshotCaption(\d+)$' {
             $i = [int]$Matches[2] - 1
             if ($i -lt $capCols.Count) { Set-AllLangs $row { param($l) $data[$l].Captions[$i] } } else { $filled = $false }
             break
