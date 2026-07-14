@@ -387,24 +387,22 @@ internal sealed class UsageDetailsPage : ContentPage
         }
         else
         {
-            var facts = new JsonArray
+            var facts = new List<(string Key, string Value)>
             {
-                new JsonObject { ["title"] = Strings.Get("Fact_Last24Hours"), ["value"] = Strings.Format("Fact_Last24HoursValue", burn.Last24Hours.ToString("F0")) },
-                new JsonObject { ["title"] = Strings.Get("Fact_DailyAverage"), ["value"] = Strings.Format("Fact_DailyAverageValue", burn.DailyAverage.ToString("F0")) },
+                (Strings.Get("Fact_Last24Hours"), Strings.Format("Fact_Last24HoursValue", burn.Last24Hours.ToString("F0"))),
+                (Strings.Get("Fact_DailyAverage"), Strings.Format("Fact_DailyAverageValue", burn.DailyAverage.ToString("F0"))),
             };
             if (BusiestSlotLabel(burn.SlotCells) is { } busiest)
             {
-                facts.Add(new JsonObject { ["title"] = Strings.Get("Fact_BusiestPeriod"), ["value"] = busiest });
+                facts.Add((Strings.Get("Fact_BusiestPeriod"), busiest));
             }
 
-            facts.Add(new JsonObject { ["title"] = Strings.Get("Fact_Pace"), ["value"] = DescribeWeeklyPace(snapshot, burn.DailyAverage) });
+            facts.Add((Strings.Get("Fact_Pace"), DescribeWeeklyPace(snapshot, burn.DailyAverage)));
 
-            body.Add(new JsonObject
+            for (var i = 0; i < facts.Count; i++)
             {
-                ["type"] = "FactSet",
-                ["spacing"] = "Medium",
-                ["facts"] = facts,
-            });
+                body.Add(FactRow(facts[i].Key, facts[i].Value, firstRow: i == 0));
+            }
         }
 
         if (snapshot.PerModelWeekly.Count > 0)
@@ -624,6 +622,40 @@ internal sealed class UsageDetailsPage : ContentPage
     }
 
     // ------------------------------------------------------------------ helpers
+
+    /// <summary>
+    /// One Breakdown statistic as an aligned key/value row: a fixed-width bold key
+    /// column so the values line up down the list, with a rule above every row after
+    /// the first. Used instead of an AdaptiveCard FactSet, whose spacing is
+    /// host-defined and whose columns can't be width-matched or divided.
+    /// </summary>
+    private static JsonObject FactRow(string key, string value, bool firstRow) => new()
+    {
+        ["type"] = "ColumnSet",
+        ["separator"] = !firstRow,
+        ["spacing"] = firstRow ? "Medium" : "Small",
+        ["columns"] = new JsonArray
+        {
+            new JsonObject
+            {
+                ["type"] = "Column",
+                ["width"] = "160px",
+                ["items"] = new JsonArray
+                {
+                    new JsonObject { ["type"] = "TextBlock", ["text"] = key, ["weight"] = "Bolder", ["wrap"] = true },
+                },
+            },
+            new JsonObject
+            {
+                ["type"] = "Column",
+                ["width"] = "stretch",
+                ["items"] = new JsonArray
+                {
+                    new JsonObject { ["type"] = "TextBlock", ["text"] = value, ["wrap"] = true },
+                },
+            },
+        },
+    };
 
     private static JsonObject SubtleText(string text, string spacing = "Medium") => new()
     {
