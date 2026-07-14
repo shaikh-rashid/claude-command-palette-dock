@@ -28,6 +28,7 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path $PSScriptRoot -Parent
 $docs = Join-Path $repoRoot "docs"
+$source = Join-Path $docs "store-listing"
 if (-not $OutputDir) { $OutputDir = Join-Path $docs "store-import" }
 
 # Package locale -> Store listing language code (lowercase).
@@ -38,8 +39,8 @@ $shotFiles = @("01-dock-tile.png", "02-usage.png", "03-breakdown.png", "04-heatm
 $capCols = @("DockTile", "UsageTab", "BreakdownTab", "HeatmapTab")
 
 # Load this repo's authored content, keyed by Store language code.
-$listings = Import-Csv (Join-Path $docs "store-listings.csv")
-$capByLoc = Import-Csv (Join-Path $docs "store-screenshot-captions.csv") | Group-Object Locale -AsHashTable -AsString
+$listings = Import-Csv (Join-Path $source "store-listings.csv")
+$capByLoc = Import-Csv (Join-Path $source "store-screenshot-captions.csv") | Group-Object Locale -AsHashTable -AsString
 $data = @{}
 foreach ($row in $listings) {
     $store = $langMap[$row.Locale]
@@ -124,7 +125,7 @@ $out = foreach ($row in $rows) {
 New-Item $OutputDir -ItemType Directory -Force | Out-Null
 $csvPath = Join-Path $OutputDir "listing-import.csv"
 $out | Export-Csv -LiteralPath $csvPath -NoTypeInformation -Encoding utf8
-foreach ($f in $shotFiles) { Copy-Item (Join-Path $docs "store-assets\$f") $OutputDir -Force }
+foreach ($f in $shotFiles) { Copy-Item (Join-Path $source "screenshots\$f") $OutputDir -Force }
 
 Write-Host "Wrote $csvPath (UTF-8)"
 Write-Host "Filled $($matched.Count) field rows: $($matched -join ', ')"
