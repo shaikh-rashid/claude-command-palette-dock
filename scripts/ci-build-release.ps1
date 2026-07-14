@@ -28,9 +28,18 @@ $certPath = Join-Path $OutputDir "ClaudeUsageDock-Release.cer"
 # patch the manifest publisher (signtool refuses to sign an MSIX whose
 # Identity Publisher differs from the certificate subject — the manifest in
 # the repo carries the dev publisher, not the release one).
+#
+# EphemeralKeySet keeps the private key in memory and never writes it to the
+# on-disk user key container. The default (DefaultKeySet) persists the key
+# there, which throws "Access denied" on the GitLab SaaS Windows runner whose
+# job context can't write to that store. This object is only read for its
+# Subject/Thumbprint and to export the public .cer — the actual signing hands
+# the PFX path straight to signtool — so an in-memory key is all it needs.
 Write-Host "Loading signing certificate..."
 $securePassword = ConvertTo-SecureString -String $PfxPassword -Force -AsPlainText
-$cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($PfxPath, $securePassword)
+$cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
+    $PfxPath, $securePassword,
+    [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet)
 Write-Host "Signing as: $($cert.Subject) (thumbprint $($cert.Thumbprint))"
 
 Write-Host "Publishing..."
