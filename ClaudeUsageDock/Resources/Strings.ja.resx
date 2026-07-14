@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Japanese. Same keys and order as Strings.resx. -->
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+
+  <!-- Shared headings -->
+  <data name="Heading_Default" xml:space="preserve"><value>Claude 使用状況</value></data>
+  <data name="Heading_WithLabel" xml:space="preserve"><value>Claude 使用状況 — {0}</value></data>
+
+  <!-- UsageDetailsPage -->
+  <data name="Command_Refresh" xml:space="preserve"><value>更新</value></data>
+  <data name="Command_ConfigureAccounts" xml:space="preserve"><value>アカウントを設定</value></data>
+  <data name="Header_PlanLine" xml:space="preserve"><value>プラン: **{0}** · 最終確認 {1}</value></data>
+  <data name="Tab_Usage" xml:space="preserve"><value>使用状況</value></data>
+  <data name="Tab_Breakdown" xml:space="preserve"><value>内訳</value></data>
+  <data name="Tab_Heatmap" xml:space="preserve"><value>ヒートマップ</value></data>
+  <data name="Bar_SessionLabel" xml:space="preserve"><value>5 時間制限</value></data>
+  <data name="Bar_WeeklyAllModels" xml:space="preserve"><value>週間 · 全モデル</value></data>
+  <data name="Bar_WeeklyModel" xml:space="preserve"><value>週間 · {0}</value></data>
+  <data name="Bar_AltText" xml:space="preserve"><value>{0}: 残り {1}%</value></data>
+  <data name="Reset_Soon" xml:space="preserve"><value>まもなくリセット</value></data>
+  <data name="Reset_InMinutes" xml:space="preserve"><value>あと {0} 分でリセット</value></data>
+  <data name="Reset_InHoursMinutes" xml:space="preserve"><value>あと {0} 時間 {1} 分でリセット</value></data>
+  <data name="Reset_AtTime" xml:space="preserve"><value>{0} にリセット</value></data>
+  <data name="Burn_LastsUntilReset" xml:space="preserve"><value>現在のペースなら、セッションはリセットまで持ちます。</value></data>
+  <data name="Burn_RunsOutAround" xml:space="preserve"><value>現在のペース (≈{0}%/時) では、セッションは {1} 頃に使い切ります。</value></data>
+  <data name="Breakdown_Title" xml:space="preserve"><value>何が制限を消費している?</value></data>
+  <data name="Breakdown_Disclaimer" xml:space="preserve"><value>この PC のローカル記録に基づく概算です — 他のデバイスや claude.ai は含まれません。</value></data>
+  <data name="Breakdown_NotEnoughHistory" xml:space="preserve"><value>ローカル履歴がまだ足りません — 数時間分の使用が記録されると統計が表示されます。</value></data>
+  <data name="Fact_Last24Hours" xml:space="preserve"><value>過去 24 時間</value></data>
+  <data name="Fact_Last24HoursValue" xml:space="preserve"><value>週間クォータの {0}%</value></data>
+  <data name="Fact_DailyAverage" xml:space="preserve"><value>1 日平均</value></data>
+  <data name="Fact_DailyAverageValue" xml:space="preserve"><value>週間クォータの {0}%/日</value></data>
+  <data name="Fact_BusiestPeriod" xml:space="preserve"><value>最も活発な時間帯</value></data>
+  <data name="Fact_Pace" xml:space="preserve"><value>ペース</value></data>
+  <data name="Breakdown_PerModelTitle" xml:space="preserve"><value>モデル別の週間制限</value></data>
+  <data name="Breakdown_PerModelLine" xml:space="preserve"><value>{0} — {1}% 使用 · {2}</value></data>
+  <data name="Pace_BarelyDenting" xml:space="preserve"><value>週間制限にはほとんど影響していません</value></data>
+  <data name="Pace_LastsUntilReset" xml:space="preserve"><value>このペースなら週間制限はリセットまで持ちます</value></data>
+  <data name="Pace_RunsOutAround" xml:space="preserve"><value>このペースでは週間制限を {0} 頃に使い切ります</value></data>
+  <data name="Heatmap_NotEnoughHistory" xml:space="preserve"><value>ローカル履歴がまだ足りません — 数時間分の使用が記録されるとヒートマップが表示されます。</value></data>
+  <data name="Heatmap_Title" xml:space="preserve"><value>過去 1 か月</value></data>
+  <data name="Heatmap_AltText" xml:space="preserve"><value>過去 5 週間の日別使用状況のヒートマップ (週合計とカラー凡例付き)</value></data>
+  <data name="Heatmap_CaptionPastMonth" xml:space="preserve"><value>過去 1 か月の使用状況</value></data>
+  <data name="Heatmap_CaptionSince" xml:space="preserve"><value>{0} 以降の使用状況</value></data>
+  <data name="Heatmap_MonthTotal" xml:space="preserve"><value>月間 ≈ 週間クォータの {0}%</value></data>
+  <data name="Fail_NotSignedIn" xml:space="preserve"><value>ローカルの Claude Code セッションが見つかりません。`claude login` でサインインしてから、このページを開き直してください。</value></data>
+  <data name="Fail_TokenExpired" xml:space="preserve"><value>Claude Code のトークンが期限切れで、自動更新にも失敗しました。Claude Code に再サインイン (ターミナルで `claude` を実行) してから、このページを更新してください。</value></data>
+  <data name="Fail_RateLimited" xml:space="preserve"><value>Anthropic が使用状況の確認をレート制限しています (HTTP 429)。自然に解消します — 数分以内にデータが再表示されます。</value></data>
+  <data name="Fail_RequestFailed" xml:space="preserve"><value>Anthropic の使用状況 API がエラーを返しました (ステータス {0})。</value></data>
+  <data name="Fail_Offline" xml:space="preserve"><value>Anthropic に接続できません — ネットワーク接続を確認してください。</value></data>
+  <data name="Fail_UnexpectedResponse" xml:space="preserve"><value>使用状況データとは思えない応答を受け取りました。</value></data>
+  <data name="Fail_Unknown" xml:space="preserve"><value>現在、使用状況を取得できません。</value></data>
+
+  <!-- UsageDockBand -->
+  <data name="Tile_SessionLeft" xml:space="preserve"><value>セッション残り {0}%</value></data>
+  <data name="Tile_Subtitle" xml:space="preserve"><value>週 {0}% · {1} にリセット</value></data>
+  <data name="TileFail_NotSignedIn" xml:space="preserve"><value>Claude Code にサインインしていません</value></data>
+  <data name="TileFail_TokenExpired" xml:space="preserve"><value>セッション期限切れ — Claude Code にサインイン</value></data>
+  <data name="TileFail_RateLimited" xml:space="preserve"><value>レート制限中 — まもなく再試行</value></data>
+  <data name="TileFail_RequestFailed" xml:space="preserve"><value>Anthropic API エラー ({0})</value></data>
+  <data name="TileFail_Offline" xml:space="preserve"><value>オフライン — 再試行します</value></data>
+  <data name="TileFail_UnexpectedResponse" xml:space="preserve"><value>予期しない応答</value></data>
+  <data name="TileFail_Unknown" xml:space="preserve"><value>使用状況を取得できません</value></data>
+
+  <!-- ToastNotifier -->
+  <data name="Toast_LowQuotaTitle" xml:space="preserve"><value>Claude セッションが残りわずか</value></data>
+  <data name="Toast_LowQuotaBody" xml:space="preserve"><value>残り {0}% · {1} にリセット</value></data>
+
+  <!-- PowerCommandProvider -->
+  <data name="Command_Subtitle" xml:space="preserve"><value>セッション・週間・モデル別の制限</value></data>
+
+  <!-- SettingsManager -->
+  <data name="Setting_RefreshInterval_Title" xml:space="preserve"><value>ドックの更新間隔</value></data>
+  <data name="Setting_RefreshInterval_Desc" xml:space="preserve"><value>ドックのタイルが使用状況を再確認する頻度</value></data>
+  <data name="Setting_Choice_15Seconds" xml:space="preserve"><value>15 秒</value></data>
+  <data name="Setting_Choice_30Seconds" xml:space="preserve"><value>30 秒</value></data>
+  <data name="Setting_Choice_1Minute" xml:space="preserve"><value>1 分</value></data>
+  <data name="Setting_Choice_5Minutes" xml:space="preserve"><value>5 分</value></data>
+  <data name="Setting_Threshold_Title" xml:space="preserve"><value>残量低下アラートのしきい値</value></data>
+  <data name="Setting_Threshold_Desc" xml:space="preserve"><value>セッションの残りがこの割合を下回ったらタイルをアラートアイコンに切り替える</value></data>
+  <data name="Setting_Toast_Title" xml:space="preserve"><value>セッションが残りわずかになったら通知</value></data>
+  <data name="Setting_Toast_Desc" xml:space="preserve"><value>セッション使用量が初めてしきい値を下回ったときに Windows 通知を表示する</value></data>
+  <data name="Setting_Profile2Label_Title" xml:space="preserve"><value>2 つ目のアカウント: ラベル</value></data>
+  <data name="Setting_Profile2Label_Desc" xml:space="preserve"><value>タイルとコマンドに表示されます (例:「仕事」)</value></data>
+  <data name="Setting_Profile2Path_Title" xml:space="preserve"><value>2 つ目のアカウント: 資格情報ファイル</value></data>
+  <data name="Setting_Profile3Label_Title" xml:space="preserve"><value>3 つ目のアカウント: ラベル</value></data>
+  <data name="Setting_Profile3Label_Desc" xml:space="preserve"><value>タイルとコマンドに表示されます (例:「クライアント」)</value></data>
+  <data name="Setting_Profile3Path_Title" xml:space="preserve"><value>3 つ目のアカウント: 資格情報ファイル</value></data>
+  <data name="Setting_ProfilePath_Desc" xml:space="preserve"><value>別の Claude アカウントの保存済み .credentials.json へのフルパス。空欄にすると無効になります。</value></data>
+  <data name="Setting_Profile2_Fallback" xml:space="preserve"><value>プロファイル 2</value></data>
+  <data name="Setting_Profile3_Fallback" xml:space="preserve"><value>プロファイル 3</value></data>
+</root>

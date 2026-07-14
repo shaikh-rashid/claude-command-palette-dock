@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-07-13
+
+### Added
+
+- **Localized UI** — every user-facing string (dock tile, details page tabs and
+  bars, breakdown facts, failure messages, toast, and all settings) now comes
+  from `.resx` resources with translations for **German, French, Spanish,
+  Japanese, and Simplified Chinese**, following the Windows display language
+  with English fallback. Times, dates, and numbers already format through the
+  current culture. Deliberately not localized: the pixel-font labels rendered
+  inside the heatmap PNGs (the built-in 5×5 typeface only covers A–Z0–9), debug
+  log lines, and the "Claude Usage Dock" product name. The MSIX manifest now
+  declares all six languages.
+- **Microsoft Store packaging** — `scripts/build-store-package.ps1` produces
+  the unsigned Store submission MSIX with the Partner Center identity
+  (name/publisher/publisher display name) patched in;
+  `New-MsixPackage` gained the corresponding identity-override parameters.
+  The full submission walkthrough lives in `docs/DISTRIBUTION.md`.
+- **WinGet distribution tooling** — `scripts/new-winget-manifest.ps1` generates
+  the three winget-pkgs manifest files from a signed release MSIX, reading the
+  identity/version out of the package and computing `InstallerSha256`,
+  `SignatureSha256`, and the `PackageFamilyName` (publisher-hash algorithm
+  verified against the installed package; output passes `winget validate`).
+  `docs/DISTRIBUTION.md` documents both routes — the `msstore` source that
+  comes free with a Store listing (recommended), and the community
+  microsoft/winget-pkgs repo, which additionally requires a trusted-root
+  signature that the current self-signed release certificate can't satisfy.
+
 ## [0.9.3] - 2026-07-13
 
 ### Fixed

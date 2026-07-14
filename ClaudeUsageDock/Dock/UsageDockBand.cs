@@ -1,4 +1,5 @@
 using ClaudeUsageDock.Pages;
+using ClaudeUsageDock.Resources;
 using ClaudeUsageDock.Services;
 using Microsoft.CommandPalette.Extensions.Toolkit;
 
@@ -26,7 +27,9 @@ internal sealed class UsageDockBand
     {
         _usageService = usageService;
         _settings = settings;
-        _baseTitle = profile.Label is null ? "Claude usage" : $"Claude usage — {profile.Label}";
+        _baseTitle = profile.Label is null
+            ? Strings.Get("Heading_Default")
+            : Strings.Format("Heading_WithLabel", profile.Label);
         _titleSuffix = profile.Label is null ? string.Empty : $" — {profile.Label}";
 
         _tile = new ListItem(detailsPage)
@@ -73,21 +76,21 @@ internal sealed class UsageDockBand
         _lowQuotaNotified = lowOnQuota;
 
         ApplyTile(
-            title: $"{sessionLeft}% session left{_titleSuffix}",
-            subtitle: $"{weeklyLeft}% week · resets {resetsLocal:t}",
+            title: Strings.Format("Tile_SessionLeft", sessionLeft) + _titleSuffix,
+            subtitle: Strings.Format("Tile_Subtitle", weeklyLeft, resetsLocal.ToString("t")),
             lowOnQuota: lowOnQuota);
     }
 
     /// <summary>Tile-sized (subtitle-length) failure text; the details page has the long-form versions.</summary>
     private static string DescribeFailure(UsageFetchOutcome outcome, int? statusCode) => outcome switch
     {
-        UsageFetchOutcome.NotSignedIn => "Not signed in to Claude Code",
-        UsageFetchOutcome.TokenExpired => "Session expired — sign in to Claude Code",
-        UsageFetchOutcome.RateLimited => "Rate limited — retrying soon",
-        UsageFetchOutcome.RequestFailed => $"Anthropic API error ({statusCode})",
-        UsageFetchOutcome.Offline => "Offline — will retry",
-        UsageFetchOutcome.UnexpectedResponse => "Unexpected response",
-        _ => "Unable to fetch usage",
+        UsageFetchOutcome.NotSignedIn => Strings.Get("TileFail_NotSignedIn"),
+        UsageFetchOutcome.TokenExpired => Strings.Get("TileFail_TokenExpired"),
+        UsageFetchOutcome.RateLimited => Strings.Get("TileFail_RateLimited"),
+        UsageFetchOutcome.RequestFailed => Strings.Format("TileFail_RequestFailed", statusCode),
+        UsageFetchOutcome.Offline => Strings.Get("TileFail_Offline"),
+        UsageFetchOutcome.UnexpectedResponse => Strings.Get("TileFail_UnexpectedResponse"),
+        _ => Strings.Get("TileFail_Unknown"),
     };
 
     /// <summary>Writes the tile; the icon is only touched when the low-quota state flips, since it's the expensive part to re-render.</summary>

@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json.Nodes;
+using ClaudeUsageDock.Resources;
 using ClaudeUsageDock.Services;
 using Microsoft.CommandPalette.Extensions;
 using Microsoft.CommandPalette.Extensions.Toolkit;
@@ -41,7 +42,9 @@ internal sealed class UsageDetailsPage : ContentPage
     public UsageDetailsPage(ClaudeUsageService usageService, UsageProfile profile, ICommand settingsCommand)
     {
         _usageService = usageService;
-        _heading = profile.Label is null ? "Claude usage" : $"Claude usage — {profile.Label}";
+        _heading = profile.Label is null
+            ? Strings.Get("Heading_Default")
+            : Strings.Format("Heading_WithLabel", profile.Label);
 
         // Keep the default profile's ids/labels exactly as before so existing
         // users' pinned/added items aren't orphaned by this change.
@@ -54,9 +57,9 @@ internal sealed class UsageDetailsPage : ContentPage
         Commands =
         [
             new CommandContextItem(
-                title: "Refresh",
+                title: Strings.Get("Command_Refresh"),
                 subtitle: string.Empty,
-                name: "Refresh",
+                name: Strings.Get("Command_Refresh"),
                 result: CommandResult.KeepOpen(),
                 action: () =>
                 {
@@ -69,7 +72,7 @@ internal sealed class UsageDetailsPage : ContentPage
             },
             new CommandContextItem(settingsCommand)
             {
-                Title = "Configure accounts",
+                Title = Strings.Get("Command_ConfigureAccounts"),
                 Icon = new IconInfo(""), // Segoe Fluent gear
             },
         ];
@@ -90,7 +93,7 @@ internal sealed class UsageDetailsPage : ContentPage
         }
 
         var snapshot = result.Snapshot;
-        var header = $"# {_heading}\n\nPlan: **{snapshot.PlanType}** · last checked {snapshot.RetrievedAt.ToLocalTime():t}";
+        var header = $"# {_heading}\n\n{Strings.Format("Header_PlanLine", snapshot.PlanType, snapshot.RetrievedAt.ToLocalTime().ToString("t"))}";
         return [new MarkdownContent(header), new UsageCardContent(this, snapshot)];
     }
 
@@ -166,7 +169,7 @@ internal sealed class UsageDetailsPage : ContentPage
     private static JsonObject BuildTabStrip(string activeTab)
     {
         var actions = new JsonArray();
-        foreach (var (id, title) in new[] { (TabUsage, "Usage"), (TabBreakdown, "Breakdown"), (TabHeatmap, "Heatmap") })
+        foreach (var (id, title) in new[] { (TabUsage, Strings.Get("Tab_Usage")), (TabBreakdown, Strings.Get("Tab_Breakdown")), (TabHeatmap, Strings.Get("Tab_Heatmap")) })
         {
             var action = new JsonObject
             {
@@ -197,16 +200,16 @@ internal sealed class UsageDetailsPage : ContentPage
     /// </summary>
     private void AppendUsageSection(JsonArray body, ClaudeUsageSnapshot snapshot)
     {
-        AddBar(body, "5-hour limit", snapshot.SessionRemainingPercent, snapshot.SessionResetsAt);
+        AddBar(body, Strings.Get("Bar_SessionLabel"), snapshot.SessionRemainingPercent, snapshot.SessionResetsAt);
         if (DescribeBurnRate(snapshot) is { } burnNote)
         {
             body.Add(SubtleText(burnNote, spacing: "Small"));
         }
 
-        AddBar(body, "Weekly · all models", snapshot.WeeklyRemainingPercent, snapshot.WeeklyResetsAt);
+        AddBar(body, Strings.Get("Bar_WeeklyAllModels"), snapshot.WeeklyRemainingPercent, snapshot.WeeklyResetsAt);
         foreach (var model in snapshot.PerModelWeekly)
         {
-            AddBar(body, $"Weekly · {model.DisplayName}", 100 - model.PercentUsed, model.ResetsAt);
+            AddBar(body, Strings.Format("Bar_WeeklyModel", model.DisplayName), 100 - model.PercentUsed, model.ResetsAt);
         }
     }
 
@@ -284,7 +287,7 @@ internal sealed class UsageDetailsPage : ContentPage
             ["type"] = "Image",
             ["url"] = $"data:image/png;base64,{Convert.ToBase64String(BarRenderer.Render(remaining))}",
             ["width"] = $"{BarRenderer.DisplayWidth}px",
-            ["altText"] = $"{label}: {remaining}% remaining",
+            ["altText"] = Strings.Format("Bar_AltText", label, remaining),
             ["spacing"] = "Small",
         };
 
@@ -313,20 +316,21 @@ internal sealed class UsageDetailsPage : ContentPage
         var delta = resetsAt - DateTimeOffset.UtcNow;
         if (delta <= TimeSpan.Zero)
         {
-            return "Resets soon";
+            return Strings.Get("Reset_Soon");
         }
 
         if (delta < TimeSpan.FromHours(1))
         {
-            return $"Resets in {Math.Max(1, (int)delta.TotalMinutes)} min";
+            return Strings.Format("Reset_InMinutes", Math.Max(1, (int)delta.TotalMinutes));
         }
 
         if (delta < TimeSpan.FromDays(1))
         {
-            return $"Resets in {(int)delta.TotalHours} hr {delta.Minutes} min";
+            return Strings.Format("Reset_InHoursMinutes", (int)delta.TotalHours, delta.Minutes);
         }
 
-        return $"Resets {resetsAt.ToLocalTime():ddd h:mm tt}";
+        // Weekday + short time in the user's locale ("Sat 2:00 PM" / "Sa 14:00").
+        return Strings.Format("Reset_AtTime", resetsAt.ToLocalTime().ToString("ddd " + CultureInfo.CurrentCulture.DateTimeFormat.ShortTimePattern));
     }
 
     /// <summary>Projects when the session hits 0% from the last ~90 minutes of samples.</summary>
@@ -356,8 +360,8 @@ internal sealed class UsageDetailsPage : ContentPage
         var emptyAt = DateTimeOffset.UtcNow.AddHours(hoursLeft);
 
         return emptyAt >= snapshot.SessionResetsAt
-            ? "At the current pace, your session lasts until it resets."
-            : $"At the current pace (≈{burnPerHour:F0}%/h), the session runs out around {emptyAt.ToLocalTime():t}.";
+            ? Strings.Get("Burn_LastsUntilReset")
+            : Strings.Format("Burn_RunsOutAround", burnPerHour.ToString("F0"), emptyAt.ToLocalTime().ToString("t"));
     }
 
     // ------------------------------------------------------------ Breakdown tab
@@ -371,29 +375,29 @@ internal sealed class UsageDetailsPage : ContentPage
         body.Add(new JsonObject
         {
             ["type"] = "TextBlock",
-            ["text"] = "What's using your limits?",
+            ["text"] = Strings.Get("Breakdown_Title"),
             ["weight"] = "Bolder",
             ["spacing"] = "Medium",
         });
-        body.Add(SubtleText("Approximate, from local samples on this machine — other devices and claude.ai aren't counted.", spacing: "Small"));
+        body.Add(SubtleText(Strings.Get("Breakdown_Disclaimer"), spacing: "Small"));
 
         if (ComputeWeeklyBurn() is not { } burn)
         {
-            body.Add(SubtleText("Not enough local history yet — statistics appear after a few hours of recorded usage."));
+            body.Add(SubtleText(Strings.Get("Breakdown_NotEnoughHistory")));
         }
         else
         {
             var facts = new JsonArray
             {
-                new JsonObject { ["title"] = "Last 24 h", ["value"] = $"{burn.Last24Hours:F0}% of the weekly quota" },
-                new JsonObject { ["title"] = "Daily average", ["value"] = $"{burn.DailyAverage:F0}% of the weekly quota per day" },
+                new JsonObject { ["title"] = Strings.Get("Fact_Last24Hours"), ["value"] = Strings.Format("Fact_Last24HoursValue", burn.Last24Hours.ToString("F0")) },
+                new JsonObject { ["title"] = Strings.Get("Fact_DailyAverage"), ["value"] = Strings.Format("Fact_DailyAverageValue", burn.DailyAverage.ToString("F0")) },
             };
             if (BusiestSlotLabel(burn.SlotCells) is { } busiest)
             {
-                facts.Add(new JsonObject { ["title"] = "Busiest period", ["value"] = busiest });
+                facts.Add(new JsonObject { ["title"] = Strings.Get("Fact_BusiestPeriod"), ["value"] = busiest });
             }
 
-            facts.Add(new JsonObject { ["title"] = "Pace", ["value"] = DescribeWeeklyPace(snapshot, burn.DailyAverage) });
+            facts.Add(new JsonObject { ["title"] = Strings.Get("Fact_Pace"), ["value"] = DescribeWeeklyPace(snapshot, burn.DailyAverage) });
 
             body.Add(new JsonObject
             {
@@ -408,13 +412,13 @@ internal sealed class UsageDetailsPage : ContentPage
             body.Add(new JsonObject
             {
                 ["type"] = "TextBlock",
-                ["text"] = "Per-model weekly limits",
+                ["text"] = Strings.Get("Breakdown_PerModelTitle"),
                 ["weight"] = "Bolder",
                 ["spacing"] = "Large",
             });
             foreach (var model in snapshot.PerModelWeekly)
             {
-                body.Add(SubtleText($"{model.DisplayName} — {model.PercentUsed:F0}% used · {FormatReset(model.ResetsAt)}", spacing: "Small"));
+                body.Add(SubtleText(Strings.Format("Breakdown_PerModelLine", model.DisplayName, model.PercentUsed.ToString("F0"), FormatReset(model.ResetsAt)), spacing: "Small"));
             }
         }
     }
@@ -500,14 +504,14 @@ internal sealed class UsageDetailsPage : ContentPage
     {
         if (dailyAverage < 0.5)
         {
-            return "barely denting the weekly limit";
+            return Strings.Get("Pace_BarelyDenting");
         }
 
         var daysLeft = snapshot.WeeklyRemainingPercent / dailyAverage;
         var emptyAt = DateTimeOffset.Now.AddDays(daysLeft);
         return emptyAt >= snapshot.WeeklyResetsAt.ToLocalTime()
-            ? "at this pace, the weekly limit lasts until it resets"
-            : $"at this pace, the weekly limit runs out around {emptyAt:ddd h tt}";
+            ? Strings.Get("Pace_LastsUntilReset")
+            : Strings.Format("Pace_RunsOutAround", emptyAt.ToString("ddd " + CultureInfo.CurrentCulture.DateTimeFormat.ShortTimePattern));
     }
 
     // -------------------------------------------------------------- Heatmap tab
@@ -517,14 +521,14 @@ internal sealed class UsageDetailsPage : ContentPage
     {
         if (BuildMonthlyGraph() is not { } trend)
         {
-            body.Add(SubtleText("Not enough local history yet — the heatmap appears after a few hours of recorded usage."));
+            body.Add(SubtleText(Strings.Get("Heatmap_NotEnoughHistory")));
             return;
         }
 
         body.Add(new JsonObject
         {
             ["type"] = "TextBlock",
-            ["text"] = "Past month",
+            ["text"] = Strings.Get("Heatmap_Title"),
             ["weight"] = "Bolder",
             ["spacing"] = "Medium",
         });
@@ -533,7 +537,7 @@ internal sealed class UsageDetailsPage : ContentPage
             ["type"] = "Image",
             ["url"] = $"data:image/png;base64,{trend.PngBase64}",
             ["width"] = $"{TrendChartRenderer.DisplayWidth}px",
-            ["altText"] = "Heatmap of daily usage over the past five weeks, with week totals and a color legend",
+            ["altText"] = Strings.Get("Heatmap_AltText"),
             ["spacing"] = "Small",
         });
         body.Add(SubtleText(trend.Caption, spacing: "Small"));
@@ -614,9 +618,9 @@ internal sealed class UsageDetailsPage : ContentPage
 
         var png = TrendChartRenderer.Render(dayCells, weekTotals, rowLabels);
         var caption = span >= TimeSpan.FromDays(27)
-            ? "usage over the past month"
-            : $"usage since {first.ToLocalTime():MMM d}";
-        return (Convert.ToBase64String(png), caption, $"month ≈ {monthTotal:F0}% of one week's quota");
+            ? Strings.Get("Heatmap_CaptionPastMonth")
+            : Strings.Format("Heatmap_CaptionSince", first.ToLocalTime().ToString("MMM d"));
+        return (Convert.ToBase64String(png), caption, Strings.Format("Heatmap_MonthTotal", monthTotal.ToString("F0")));
     }
 
     // ------------------------------------------------------------------ helpers
@@ -634,12 +638,12 @@ internal sealed class UsageDetailsPage : ContentPage
     /// <summary>Long-form failure text with what to do about it; the dock tile shows the short versions.</summary>
     private static string DescribeFailure(UsageFetchResult result) => result.Outcome switch
     {
-        UsageFetchOutcome.NotSignedIn => "No local Claude Code session found. Sign in with `claude login` and reopen this page.",
-        UsageFetchOutcome.TokenExpired => "Your Claude Code token has expired and automatic refresh didn't succeed. Sign in again in Claude Code (run `claude` in a terminal), then refresh this page.",
-        UsageFetchOutcome.RateLimited => "Anthropic is rate-limiting usage checks right now (HTTP 429). This clears on its own — the page will show data again within a couple of minutes.",
-        UsageFetchOutcome.RequestFailed => $"Anthropic's usage API returned an error (status {result.StatusCode}).",
-        UsageFetchOutcome.Offline => "Couldn't reach Anthropic — check your network connection.",
-        UsageFetchOutcome.UnexpectedResponse => "Got a response that didn't look like usage data.",
-        _ => "Couldn't fetch usage right now.",
+        UsageFetchOutcome.NotSignedIn => Strings.Get("Fail_NotSignedIn"),
+        UsageFetchOutcome.TokenExpired => Strings.Get("Fail_TokenExpired"),
+        UsageFetchOutcome.RateLimited => Strings.Get("Fail_RateLimited"),
+        UsageFetchOutcome.RequestFailed => Strings.Format("Fail_RequestFailed", result.StatusCode),
+        UsageFetchOutcome.Offline => Strings.Get("Fail_Offline"),
+        UsageFetchOutcome.UnexpectedResponse => Strings.Get("Fail_UnexpectedResponse"),
+        _ => Strings.Get("Fail_Unknown"),
     };
 }

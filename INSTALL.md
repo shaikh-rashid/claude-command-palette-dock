@@ -126,3 +126,5 @@ git push origin v0.5.0
 ```
 
 `origin` is GitLab (primary) and is configured with a second push URL for GitHub, so a single `git push origin` pushes to both — no need to push to each separately. Run `git remote -v` to see the current push URLs.
+
+Distribution beyond the release downloads — the Microsoft Store and WinGet — is documented separately in [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md).

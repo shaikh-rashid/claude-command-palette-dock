@@ -16,6 +16,7 @@ Inspired by [omgapnt/ClaudeUsage](https://github.com/omgapnt/ClaudeUsage).
 - **Token auto-refresh** — when the stored Claude Code token expires, the extension refreshes it itself (and writes it back for Claude Code), so the tile keeps working overnight.
 - **Multiple accounts** — monitor up to two additional Claude accounts by pointing extra profiles at separately saved credential files, each with its own dock tile, command, and history.
 - **Settings** — refresh interval, alert threshold, toast notifications, and additional account profiles are editable from the extension's Settings page in Command Palette.
+- **Localized** — the UI follows your Windows display language: English, German, French, Spanish, Japanese, and Simplified Chinese (adding a language is one `Strings.<culture>.resx` file).
 - **Resilient polling** — backs off when Anthropic rate-limits (HTTP 429) and keeps showing the last good numbers for up to 10 minutes instead of an error tile.
 - **Privacy-first** — talks only to Anthropic's official endpoints with the token Claude Code already stores locally; usage history is a local file.
 
@@ -100,11 +101,19 @@ ClaudeUsageDock/
     UsageDockBand.cs            the dock tile (title/subtitle/icon per refresh)
   Pages/
     UsageDetailsPage.cs         tabbed stats page: Usage / Breakdown / Heatmap
+  Resources/
+    Strings.cs                  resource accessor (CurrentUICulture, English fallback)
+    Strings.resx                neutral (English) UI strings
+    Strings.<culture>.resx      translations (de, fr, es, ja, zh-Hans)
   Assets/                       app tile logos + status icons
+docs/
+  DISTRIBUTION.md               publishing to the Microsoft Store and WinGet
 scripts/
   BuildTools.ps1                 shared publish/stage/pack/sign helpers (dev + CI)
   ci-build-release.ps1            CI-only: builds and signs the release MSIX
   generate-release-cert.ps1       one-time: creates the persistent release signing cert
+  build-store-package.ps1         unsigned Store-submission MSIX (Partner Center identity)
+  new-winget-manifest.ps1         winget-pkgs manifest set from a signed release MSIX
 .gitlab-ci.yml                  primary: security checks on main/MRs + signed GitLab Release on tag push
 .github/workflows/release.yml   mirror: signed GitHub Release on tag push
 .github/workflows/security.yml  mirror: secret scan (gitleaks) + NuGet vulnerability audit

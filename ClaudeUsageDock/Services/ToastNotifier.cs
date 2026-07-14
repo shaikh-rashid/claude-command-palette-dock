@@ -1,3 +1,5 @@
+using System.Security;
+using ClaudeUsageDock.Resources;
 using Windows.Data.Xml.Dom;
 using Windows.UI.Notifications;
 
@@ -15,13 +17,17 @@ internal static class ToastNotifier
     {
         try
         {
+            // Localized strings get XML-escaped: a translation is data here, not markup.
+            var title = SecurityElement.Escape(Strings.Get("Toast_LowQuotaTitle"));
+            var body = SecurityElement.Escape(Strings.Format("Toast_LowQuotaBody", sessionLeftPercent, resetsAtLocal.ToString("t")));
+
             var xml = new XmlDocument();
             xml.LoadXml($"""
                 <toast>
                   <visual>
                     <binding template="ToastGeneric">
-                      <text>Claude session running low</text>
-                      <text>{sessionLeftPercent}% remaining · resets {resetsAtLocal:t}</text>
+                      <text>{title}</text>
+                      <text>{body}</text>
                     </binding>
                   </visual>
                 </toast>

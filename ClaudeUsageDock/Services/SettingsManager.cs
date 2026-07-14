@@ -1,3 +1,4 @@
+using ClaudeUsageDock.Resources;
 using Microsoft.CommandPalette.Extensions.Toolkit;
 
 namespace ClaudeUsageDock.Services;
@@ -19,19 +20,19 @@ internal sealed class SettingsManager : JsonSettingsManager
 
     private readonly ChoiceSetSetting _refreshInterval = new(
         "refreshInterval",
-        "Dock refresh interval",
-        "How often the dock tile re-checks your usage",
+        Strings.Get("Setting_RefreshInterval_Title"),
+        Strings.Get("Setting_RefreshInterval_Desc"),
         [
-            new ChoiceSetSetting.Choice("15 seconds", "15"),
-            new ChoiceSetSetting.Choice("30 seconds", "30"),
-            new ChoiceSetSetting.Choice("1 minute", "60"),
-            new ChoiceSetSetting.Choice("5 minutes", "300"),
+            new ChoiceSetSetting.Choice(Strings.Get("Setting_Choice_15Seconds"), "15"),
+            new ChoiceSetSetting.Choice(Strings.Get("Setting_Choice_30Seconds"), "30"),
+            new ChoiceSetSetting.Choice(Strings.Get("Setting_Choice_1Minute"), "60"),
+            new ChoiceSetSetting.Choice(Strings.Get("Setting_Choice_5Minutes"), "300"),
         ]);
 
     private readonly ChoiceSetSetting _lowQuotaThreshold = new(
         "lowQuotaThreshold",
-        "Low-quota alert threshold",
-        "Switch the tile to the alert icon when less than this much of the session remains",
+        Strings.Get("Setting_Threshold_Title"),
+        Strings.Get("Setting_Threshold_Desc"),
         [
             new ChoiceSetSetting.Choice("10%", "10"),
             new ChoiceSetSetting.Choice("20%", "20"),
@@ -41,32 +42,32 @@ internal sealed class SettingsManager : JsonSettingsManager
 
     private readonly ToggleSetting _lowQuotaToast = new(
         "lowQuotaToast",
-        "Notify when the session runs low",
-        "Show a Windows notification the first time session usage drops below the alert threshold",
+        Strings.Get("Setting_Toast_Title"),
+        Strings.Get("Setting_Toast_Desc"),
         true);
 
     private readonly TextSetting _profile2Label = new(
         "profile2Label",
-        "Second account: label",
-        "Shown in its dock tile and command, e.g. \"Work\"",
+        Strings.Get("Setting_Profile2Label_Title"),
+        Strings.Get("Setting_Profile2Label_Desc"),
         string.Empty);
 
     private readonly TextSetting _profile2Path = new(
         "profile2Path",
-        "Second account: credentials file",
-        "Full path to a saved .credentials.json for another Claude account. Leave blank to disable.",
+        Strings.Get("Setting_Profile2Path_Title"),
+        Strings.Get("Setting_ProfilePath_Desc"),
         string.Empty);
 
     private readonly TextSetting _profile3Label = new(
         "profile3Label",
-        "Third account: label",
-        "Shown in its dock tile and command, e.g. \"Client\"",
+        Strings.Get("Setting_Profile3Label_Title"),
+        Strings.Get("Setting_Profile3Label_Desc"),
         string.Empty);
 
     private readonly TextSetting _profile3Path = new(
         "profile3Path",
-        "Third account: credentials file",
-        "Full path to a saved .credentials.json for another Claude account. Leave blank to disable.",
+        Strings.Get("Setting_Profile3Path_Title"),
+        Strings.Get("Setting_ProfilePath_Desc"),
         string.Empty);
 
     /// <summary>How often the provider's timer refreshes the dock tiles.</summary>
@@ -103,8 +104,8 @@ internal sealed class SettingsManager : JsonSettingsManager
     {
         var profiles = new List<UsageProfile> { new("default", null, null, null) };
 
-        AddIfConfigured(profiles, "profile2", _profile2Label.Value, _profile2Path.Value, "Profile 2");
-        AddIfConfigured(profiles, "profile3", _profile3Label.Value, _profile3Path.Value, "Profile 3");
+        AddIfConfigured(profiles, "profile2", _profile2Label.Value, _profile2Path.Value, Strings.Get("Setting_Profile2_Fallback"));
+        AddIfConfigured(profiles, "profile3", _profile3Label.Value, _profile3Path.Value, Strings.Get("Setting_Profile3_Fallback"));
 
         return profiles;
     }
