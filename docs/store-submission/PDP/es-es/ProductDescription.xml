@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ProductDescription language="es-es"
+    xmlns="http://schemas.microsoft.com/appx/2012/ProductDescription"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <AppStoreName>Claude Usage Dock</AppStoreName>
+  <Keywords>
+    <Keyword>claude</Keyword>
+    <Keyword>claude code</Keyword>
+    <Keyword>uso</Keyword>
+    <Keyword>powertoys</Keyword>
+    <Keyword>command palette</Keyword>
+    <Keyword>cuota</Keyword>
+    <Keyword>dock</Keyword>
+  </Keywords>
+  <Description>Claude Usage Dock es una extensión del PowerToys Command Palette que mantiene a la vista el uso de tu suscripción de Claude Code. Un mosaico del dock muestra en tiempo real cuánto queda de tu límite de sesión de 5 horas y de tu límite semanal; al hacer clic se abre una página de detalles con barras de uso, una estimación de cuándo se agotará la sesión, un desglose de tu consumo y un mapa de calor mensual. La extensión usa el token que Claude Code ya guarda en tu PC y se comunica únicamente con los endpoints oficiales de Anthropic: sin telemetría, sin terceros; tu historial permanece en un archivo local. Requiere PowerToys con el Command Palette y una instalación de Claude Code con la sesión iniciada.</Description>
+  <ShortDescription>Consulta el uso de tu suscripción de Claude Code de un vistazo en el dock del PowerToys Command Palette.</ShortDescription>
+  <ReleaseNotes>Primera versión estable. Las barras de uso ahora muestran el porcentaje restante, con una página de detalles con pestañas (Uso, Desglose, Mapa de calor). Traducido al inglés, alemán, francés, español, japonés y chino simplificado.</ReleaseNotes>
+  <ScreenshotCaptions>
+    <Caption DesktopImage="01-dock-tile.png">El mosaico del dock muestra tu sesión y semana restantes de un vistazo.</Caption>
+    <Caption DesktopImage="02-usage.png">Barras por colores para tus límites de sesión, semanal y por modelo, cada uno con su hora de restablecimiento.</Caption>
+    <Caption DesktopImage="03-breakdown.png">Descubre qué consume tu cuota: últimas 24 h, promedio diario y periodo más activo.</Caption>
+    <Caption DesktopImage="04-heatmap.png">Un mapa de calor mensual de tu uso diario, al estilo del calendario de GitHub.</Caption>
+  </ScreenshotCaptions>
+  <AppFeatures>
+    <AppFeature>Mosaico del dock en vivo con sesión y semana restantes</AppFeature>
+    <AppFeature>Página de detalles con barras de uso por colores y horas de restablecimiento</AppFeature>
+    <AppFeature>Estimación de cuándo se agotará la sesión</AppFeature>
+    <AppFeature>Desglose de uso: últimas 24 h, promedio diario, periodo más activo</AppFeature>
+    <AppFeature>Mapa de calor mensual al estilo de GitHub</AppFeature>
+    <AppFeature>Notificación de cuota baja con umbral configurable</AppFeature>
+    <AppFeature>Supervisa hasta tres cuentas de Claude</AppFeature>
+    <AppFeature>Respeta tu privacidad: sin telemetría, solo Anthropic</AppFeature>
+  </AppFeatures>
+  <WebsiteURL>https://github.com/shaikh-rashid/claude-command-palette-dock</WebsiteURL>
+  <SupportContactInfo>https://github.com/shaikh-rashid/claude-command-palette-dock/issues</SupportContactInfo>
+  <PrivacyPolicyURL>https://github.com/shaikh-rashid/claude-command-palette-dock/blob/main/PRIVACY.md</PrivacyPolicyURL>
+</ProductDescription>

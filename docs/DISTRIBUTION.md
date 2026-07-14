@@ -82,6 +82,12 @@ Repeat the **Store listing** rows for each of the six languages — screenshots
 can be reused across languages; the copy and captions are per-language (one CSV
 row each).
 
+> To fill the listing from a folder instead of by hand, everything above is
+> bundled for Microsoft's [StoreBroker](https://github.com/microsoft/StoreBroker)
+> tool under [`store-submission/`](store-submission/) (per-language PDP files +
+> screenshots); regenerate it with `scripts\build-store-submission.ps1`. See its
+> [README](store-submission/README.md).
+
 Notes:
 
 - The app is a PowerToys Command Palette *extension* — the listing description
