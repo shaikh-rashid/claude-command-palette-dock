@@ -85,4 +85,4 @@ the "Last updated" date above revised. Material changes will be noted in
 
 Questions about this policy can be raised as an issue on the project's
 repository:
-<https://gitlab.com/shaikh.rashid/claude-command-palette-dock>
+<https://github.com/shaikh-rashid/claude-command-palette-dock>
