@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - 2026-07-13
 
+### Changed
+
+- The Breakdown tab's statistics render as aligned key/value rows with a
+  fixed-width label column and a divider between rows, instead of an
+  AdaptiveCard `FactSet` whose host styling can't align columns or separate
+  entries — matching the Store listing screenshots.
+
 ### Added
 
 - **Localized UI** — every user-facing string (dock tile, details page tabs and
