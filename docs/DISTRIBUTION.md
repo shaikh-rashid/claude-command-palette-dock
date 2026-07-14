@@ -40,14 +40,15 @@ Per release:
    pre-written for every language in this repo:
    - **Description, short description, product features, search terms, and
      "what's new"** — copy the row for each language from
-     [`store-listings.csv`](store-listings.csv) (one column per field). The
+     [`store-listings.csv`](store-listing/store-listings.csv) (one column per field). The
      `ProductFeatures` and `SearchTerms` cells hold several items separated by
      ` | ` — paste each item into its own Partner Center box.
    - **Screenshots** — upload the four 1366×768 PNGs in
-     [`store-assets/`](store-assets/) (`01-dock-tile`, `02-usage`,
-     `03-breakdown`, `04-heatmap`). One set can be reused across all languages.
+     [`store-listing/screenshots/`](store-listing/screenshots/) (`01-dock-tile`,
+     `02-usage`, `03-breakdown`, `04-heatmap`). One set can be reused across all
+     languages.
    - **Screenshot captions** — one caption per screenshot per language in
-     [`store-screenshot-captions.csv`](store-screenshot-captions.csv).
+     [`store-screenshot-captions.csv`](store-listing/store-screenshot-captions.csv).
 4. Pricing: free. Under **Properties**, category "Developer tools".
 5. **Privacy policy URL** (required): the submission asks whether the app
    accesses/collects/transmits personal information — answer **Yes** (the app
@@ -66,13 +67,13 @@ in this repo. Build `store-output\ClaudeUsageDock-Store.msix` with step 1 first
 | Partner Center page / field | What to provide | Source in this repo |
 |---|---|---|
 | Packages | The app package (unsigned) | `store-output\ClaudeUsageDock-Store.msix` |
-| Store listing → Description | Long description | [`store-listings.csv`](store-listings.csv) · `Description` |
-| Store listing → Short description | One-line summary | [`store-listings.csv`](store-listings.csv) · `ShortDescription` |
-| Store listing → What's new in this version | Release notes | [`store-listings.csv`](store-listings.csv) · `WhatsNew` |
-| Store listing → Product features | Feature bullets (one per box) | [`store-listings.csv`](store-listings.csv) · `ProductFeatures` (pipe-separated) |
-| Store listing → Search terms | Up to 7 keywords (one per box) | [`store-listings.csv`](store-listings.csv) · `SearchTerms` (pipe-separated) |
-| Store listing → Screenshots | 4 × 1366×768 PNG | [`store-assets/`](store-assets/) `01`–`04-*.png` |
-| Store listing → each screenshot's caption | Per-image caption | [`store-screenshot-captions.csv`](store-screenshot-captions.csv) |
+| Store listing → Description | Long description | [`store-listings.csv`](store-listing/store-listings.csv) · `Description` |
+| Store listing → Short description | One-line summary | [`store-listings.csv`](store-listing/store-listings.csv) · `ShortDescription` |
+| Store listing → What's new in this version | Release notes | [`store-listings.csv`](store-listing/store-listings.csv) · `WhatsNew` |
+| Store listing → Product features | Feature bullets (one per box) | [`store-listings.csv`](store-listing/store-listings.csv) · `ProductFeatures` (pipe-separated) |
+| Store listing → Search terms | Up to 7 keywords (one per box) | [`store-listings.csv`](store-listing/store-listings.csv) · `SearchTerms` (pipe-separated) |
+| Store listing → Screenshots | 4 × 1366×768 PNG | [`store-listing/screenshots/`](store-listing/screenshots/) `01`–`04-*.png` |
+| Store listing → each screenshot's caption | Per-image caption | [`store-screenshot-captions.csv`](store-listing/store-screenshot-captions.csv) |
 | Properties → Privacy policy URL | **Yes**, plus the hosted URL | [`PRIVACY.md`](../PRIVACY.md) → its `github.com/…/blob/main/PRIVACY.md` URL |
 | Properties → Category | "Developer tools" | — |
 | Pricing and availability | Free | — |
@@ -103,11 +104,27 @@ to produce that folder:
   rows it didn't recognize. Then upload the `store-import` folder via **Import
   listings → Upload folder**.
 
-- **StoreBroker (API automation).** The [`store-submission/`](store-submission/)
-  folder holds per-language StoreBroker PDP files + screenshots for a fully
-  scripted submission via the Store submission API — no export needed. Regenerate
-  with `scripts\build-store-submission.ps1`; details in its
-  [README](store-submission/README.md).
+- **StoreBroker (API automation).** Generate a per-language PDP bundle from the
+  authored listing content — no export needed:
+
+  ```powershell
+  .\scripts\build-store-submission.ps1
+  ```
+
+  That writes `docs\store-submission\` (generated and gitignored): `PDP/<lang>/`
+  `ProductDescription.xml` per language, `Media/en-us/` with the four shared
+  screenshots, and `source/` with the plain CSVs for manual copy/paste. Then,
+  once (`Install-Module StoreBroker`, `Set-StoreBrokerAuthentication`,
+  `New-StoreBrokerConfigFile` with `"MediaFallbackLanguage": "en-us"`), submit:
+
+  ```powershell
+  New-SubmissionPackage -ConfigPath .\SBConfig.json `
+      -PDPRootPath .\docs\store-submission\PDP -PDPInclude "ProductDescription.xml" `
+      -ImagesRootPath .\docs\store-submission\Media -OutPath .\out -OutName submission
+  Update-ApplicationSubmission -AppId <StoreAppId> `
+      -SubmissionDataPath .\out\submission.json -PackagePath .\out\submission.zip `
+      -UpdateListingText -UpdateImagesAndCaptions -AutoCommit -Force
+  ```
 
 Notes:
 
