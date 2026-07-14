@@ -39,7 +39,13 @@ Per release:
    description can be written (or machine-assisted) per language, independent
    of the in-app strings.
 4. Pricing: free. Under **Properties**, category "Developer tools".
-5. Submit for certification (typically 1–3 business days).
+5. **Privacy policy URL** (required): the submission asks whether the app
+   accesses/collects/transmits personal information — answer **Yes** (the app
+   reads and transmits your Claude Code OAuth credentials, though only to
+   Anthropic's own endpoints), and give the URL of [PRIVACY.md](../PRIVACY.md)
+   as served by your repo host, e.g.
+   `https://gitlab.com/shaikh.rashid/claude-command-palette-dock/-/blob/main/PRIVACY.md`.
+6. Submit for certification (typically 1–3 business days).
 
 Notes:
 
