@@ -44,7 +44,12 @@ function New-MsixPackage {
         [Parameter(Mandatory)][string]$OutputMsixPath,
         # MSIX signing requires Identity Publisher == signing cert subject, so
         # release builds must swap out the dev publisher the manifest ships with.
-        [string]$PublisherOverride
+        [string]$PublisherOverride,
+        # Microsoft Store submissions must carry the identity Partner Center
+        # assigns (Product management -> Product identity), which replaces the
+        # repo manifest's name and publisher display name as well.
+        [string]$IdentityNameOverride,
+        [string]$PublisherDisplayNameOverride
     )
 
     if (Test-Path $StagingDir) { Remove-Item $StagingDir -Recurse -Force }
@@ -57,10 +62,12 @@ function New-MsixPackage {
     Copy-Item (Join-Path $ProjectDir "Assets\*") (Join-Path $StagingDir "Assets") -Recurse -Force
     Copy-Item (Join-Path $ProjectDir "Package.appxmanifest") (Join-Path $StagingDir "AppxManifest.xml") -Force
 
-    if ($PublisherOverride) {
+    if ($PublisherOverride -or $IdentityNameOverride -or $PublisherDisplayNameOverride) {
         $manifestPath = Join-Path $StagingDir "AppxManifest.xml"
         [xml]$manifest = Get-Content $manifestPath
-        $manifest.Package.Identity.Publisher = $PublisherOverride
+        if ($PublisherOverride) { $manifest.Package.Identity.Publisher = $PublisherOverride }
+        if ($IdentityNameOverride) { $manifest.Package.Identity.Name = $IdentityNameOverride }
+        if ($PublisherDisplayNameOverride) { $manifest.Package.Properties.PublisherDisplayName = $PublisherDisplayNameOverride }
         $manifest.Save($manifestPath)
     }
 

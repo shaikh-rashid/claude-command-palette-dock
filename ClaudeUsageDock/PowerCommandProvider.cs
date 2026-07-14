@@ -1,5 +1,6 @@
 using ClaudeUsageDock.Dock;
 using ClaudeUsageDock.Pages;
+using ClaudeUsageDock.Resources;
 using ClaudeUsageDock.Services;
 using Microsoft.CommandPalette.Extensions;
 using Microsoft.CommandPalette.Extensions.Toolkit;
@@ -82,7 +83,7 @@ public sealed partial class PowerCommandProvider : CommandProvider, IDisposable
         var command = new CommandItem(detailsPage)
         {
             Title = profile.Label is null ? "Claude Usage Dock" : $"Claude Usage Dock — {profile.Label}",
-            Subtitle = "Session, weekly, and per-model limits",
+            Subtitle = Strings.Get("Command_Subtitle"),
             Icon = Icons.ClaudeMark,
         };
 

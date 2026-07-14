@@ -3,6 +3,10 @@
 [Oo]bj/
 *.msix
 *.msixbundle
+msix-staging*/
+release-output/
+store-output/
+winget-manifests/
 
 # Signing material — never commit certificates or private keys
 *.pfx

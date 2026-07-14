@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Simplified Chinese. Same keys and order as Strings.resx. -->
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+
+  <!-- Shared headings -->
+  <data name="Heading_Default" xml:space="preserve"><value>Claude 用量</value></data>
+  <data name="Heading_WithLabel" xml:space="preserve"><value>Claude 用量 — {0}</value></data>
+
+  <!-- UsageDetailsPage -->
+  <data name="Command_Refresh" xml:space="preserve"><value>刷新</value></data>
+  <data name="Command_ConfigureAccounts" xml:space="preserve"><value>配置账户</value></data>
+  <data name="Header_PlanLine" xml:space="preserve"><value>套餐: **{0}** · 上次检查 {1}</value></data>
+  <data name="Tab_Usage" xml:space="preserve"><value>用量</value></data>
+  <data name="Tab_Breakdown" xml:space="preserve"><value>明细</value></data>
+  <data name="Tab_Heatmap" xml:space="preserve"><value>热力图</value></data>
+  <data name="Bar_SessionLabel" xml:space="preserve"><value>5 小时限额</value></data>
+  <data name="Bar_WeeklyAllModels" xml:space="preserve"><value>每周 · 全部模型</value></data>
+  <data name="Bar_WeeklyModel" xml:space="preserve"><value>每周 · {0}</value></data>
+  <data name="Bar_AltText" xml:space="preserve"><value>{0}: 剩余 {1}%</value></data>
+  <data name="Reset_Soon" xml:space="preserve"><value>即将重置</value></data>
+  <data name="Reset_InMinutes" xml:space="preserve"><value>{0} 分钟后重置</value></data>
+  <data name="Reset_InHoursMinutes" xml:space="preserve"><value>{0} 小时 {1} 分钟后重置</value></data>
+  <data name="Reset_AtTime" xml:space="preserve"><value>{0} 重置</value></data>
+  <data name="Burn_LastsUntilReset" xml:space="preserve"><value>按当前速度，本次会话可用到重置为止。</value></data>
+  <data name="Burn_RunsOutAround" xml:space="preserve"><value>按当前速度 (≈{0}%/小时)，会话大约在 {1} 用完。</value></data>
+  <data name="Breakdown_Title" xml:space="preserve"><value>是什么在消耗你的限额?</value></data>
+  <data name="Breakdown_Disclaimer" xml:space="preserve"><value>基于本机的本地采样估算 — 不包含其他设备和 claude.ai。</value></data>
+  <data name="Breakdown_NotEnoughHistory" xml:space="preserve"><value>本地历史记录还不够 — 记录几小时的使用后即可显示统计。</value></data>
+  <data name="Fact_Last24Hours" xml:space="preserve"><value>最近 24 小时</value></data>
+  <data name="Fact_Last24HoursValue" xml:space="preserve"><value>每周配额的 {0}%</value></data>
+  <data name="Fact_DailyAverage" xml:space="preserve"><value>日均</value></data>
+  <data name="Fact_DailyAverageValue" xml:space="preserve"><value>每天消耗每周配额的 {0}%</value></data>
+  <data name="Fact_BusiestPeriod" xml:space="preserve"><value>最繁忙时段</value></data>
+  <data name="Fact_Pace" xml:space="preserve"><value>速度</value></data>
+  <data name="Breakdown_PerModelTitle" xml:space="preserve"><value>各模型每周限额</value></data>
+  <data name="Breakdown_PerModelLine" xml:space="preserve"><value>{0} — 已用 {1}% · {2}</value></data>
+  <data name="Pace_BarelyDenting" xml:space="preserve"><value>几乎没有动用每周限额</value></data>
+  <data name="Pace_LastsUntilReset" xml:space="preserve"><value>按此速度，每周限额可用到重置为止</value></data>
+  <data name="Pace_RunsOutAround" xml:space="preserve"><value>按此速度，每周限额大约在 {0} 用完</value></data>
+  <data name="Heatmap_NotEnoughHistory" xml:space="preserve"><value>本地历史记录还不够 — 记录几小时的使用后即可显示热力图。</value></data>
+  <data name="Heatmap_Title" xml:space="preserve"><value>过去一个月</value></data>
+  <data name="Heatmap_AltText" xml:space="preserve"><value>过去五周每日用量的热力图，含每周合计和颜色图例</value></data>
+  <data name="Heatmap_CaptionPastMonth" xml:space="preserve"><value>过去一个月的用量</value></data>
+  <data name="Heatmap_CaptionSince" xml:space="preserve"><value>自 {0} 以来的用量</value></data>
+  <data name="Heatmap_MonthTotal" xml:space="preserve"><value>本月 ≈ 一周配额的 {0}%</value></data>
+  <data name="Fail_NotSignedIn" xml:space="preserve"><value>未找到本地 Claude Code 会话。请用 `claude login` 登录后重新打开此页面。</value></data>
+  <data name="Fail_TokenExpired" xml:space="preserve"><value>Claude Code 令牌已过期，自动续期也失败了。请在 Claude Code 中重新登录 (在终端运行 `claude`)，然后刷新此页面。</value></data>
+  <data name="Fail_RateLimited" xml:space="preserve"><value>Anthropic 正在对用量查询限流 (HTTP 429)。会自行恢复 — 几分钟内页面将重新显示数据。</value></data>
+  <data name="Fail_RequestFailed" xml:space="preserve"><value>Anthropic 用量 API 返回错误 (状态 {0})。</value></data>
+  <data name="Fail_Offline" xml:space="preserve"><value>无法连接 Anthropic — 请检查网络连接。</value></data>
+  <data name="Fail_UnexpectedResponse" xml:space="preserve"><value>收到的响应不像用量数据。</value></data>
+  <data name="Fail_Unknown" xml:space="preserve"><value>目前无法获取用量。</value></data>
+
+  <!-- UsageDockBand -->
+  <data name="Tile_SessionLeft" xml:space="preserve"><value>会话剩余 {0}%</value></data>
+  <data name="Tile_Subtitle" xml:space="preserve"><value>本周 {0}% · {1} 重置</value></data>
+  <data name="TileFail_NotSignedIn" xml:space="preserve"><value>未登录 Claude Code</value></data>
+  <data name="TileFail_TokenExpired" xml:space="preserve"><value>会话已过期 — 请登录 Claude Code</value></data>
+  <data name="TileFail_RateLimited" xml:space="preserve"><value>已被限流 — 稍后重试</value></data>
+  <data name="TileFail_RequestFailed" xml:space="preserve"><value>Anthropic API 错误 ({0})</value></data>
+  <data name="TileFail_Offline" xml:space="preserve"><value>离线 — 将会重试</value></data>
+  <data name="TileFail_UnexpectedResponse" xml:space="preserve"><value>意外的响应</value></data>
+  <data name="TileFail_Unknown" xml:space="preserve"><value>无法获取用量</value></data>
+
+  <!-- ToastNotifier -->
+  <data name="Toast_LowQuotaTitle" xml:space="preserve"><value>Claude 会话余量不足</value></data>
+  <data name="Toast_LowQuotaBody" xml:space="preserve"><value>剩余 {0}% · {1} 重置</value></data>
+
+  <!-- PowerCommandProvider -->
+  <data name="Command_Subtitle" xml:space="preserve"><value>会话、每周及各模型限额</value></data>
+
+  <!-- SettingsManager -->
+  <data name="Setting_RefreshInterval_Title" xml:space="preserve"><value>停靠栏刷新间隔</value></data>
+  <data name="Setting_RefreshInterval_Desc" xml:space="preserve"><value>停靠栏磁贴重新检查用量的频率</value></data>
+  <data name="Setting_Choice_15Seconds" xml:space="preserve"><value>15 秒</value></data>
+  <data name="Setting_Choice_30Seconds" xml:space="preserve"><value>30 秒</value></data>
+  <data name="Setting_Choice_1Minute" xml:space="preserve"><value>1 分钟</value></data>
+  <data name="Setting_Choice_5Minutes" xml:space="preserve"><value>5 分钟</value></data>
+  <data name="Setting_Threshold_Title" xml:space="preserve"><value>低配额警报阈值</value></data>
+  <data name="Setting_Threshold_Desc" xml:space="preserve"><value>当会话剩余低于此比例时，将磁贴切换为警报图标</value></data>
+  <data name="Setting_Toast_Title" xml:space="preserve"><value>会话余量不足时通知</value></data>
+  <data name="Setting_Toast_Desc" xml:space="preserve"><value>会话用量首次跌破警报阈值时显示 Windows 通知</value></data>
+  <data name="Setting_Profile2Label_Title" xml:space="preserve"><value>第二个账户: 标签</value></data>
+  <data name="Setting_Profile2Label_Desc" xml:space="preserve"><value>显示在其磁贴和命令中，例如“工作”</value></data>
+  <data name="Setting_Profile2Path_Title" xml:space="preserve"><value>第二个账户: 凭据文件</value></data>
+  <data name="Setting_Profile3Label_Title" xml:space="preserve"><value>第三个账户: 标签</value></data>
+  <data name="Setting_Profile3Label_Desc" xml:space="preserve"><value>显示在其磁贴和命令中，例如“客户”</value></data>
+  <data name="Setting_Profile3Path_Title" xml:space="preserve"><value>第三个账户: 凭据文件</value></data>
+  <data name="Setting_ProfilePath_Desc" xml:space="preserve"><value>另一个 Claude 账户已保存的 .credentials.json 的完整路径。留空则禁用。</value></data>
+  <data name="Setting_Profile2_Fallback" xml:space="preserve"><value>配置 2</value></data>
+  <data name="Setting_Profile3_Fallback" xml:space="preserve"><value>配置 3</value></data>
+</root>

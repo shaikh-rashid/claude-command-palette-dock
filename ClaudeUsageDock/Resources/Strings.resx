@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Neutral (English) UI strings. Culture-specific siblings (Strings.de.resx,
+  Strings.fr.resx, ...) build into satellite assemblies that ship inside the
+  MSIX; lookup follows the user's Windows display language and falls back here.
+  Keys are grouped by the class that uses them — keep the sibling files in the
+  same order so a missing translation is easy to spot by diffing.
+
+  Not localized on purpose: the pixel-font labels inside the rendered heatmap
+  PNGs (JUN, WK, LESS/MORE — the built-in 5×5 typeface only covers A–Z0–9),
+  debug log lines, and the "Claude Usage Dock" product name.
+-->
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+
+  <!-- Shared headings -->
+  <data name="Heading_Default" xml:space="preserve"><value>Claude usage</value></data>
+  <data name="Heading_WithLabel" xml:space="preserve"><value>Claude usage — {0}</value></data>
+
+  <!-- UsageDetailsPage -->
+  <data name="Command_Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Command_ConfigureAccounts" xml:space="preserve"><value>Configure accounts</value></data>
+  <data name="Header_PlanLine" xml:space="preserve"><value>Plan: **{0}** · last checked {1}</value></data>
+  <data name="Tab_Usage" xml:space="preserve"><value>Usage</value></data>
+  <data name="Tab_Breakdown" xml:space="preserve"><value>Breakdown</value></data>
+  <data name="Tab_Heatmap" xml:space="preserve"><value>Heatmap</value></data>
+  <data name="Bar_SessionLabel" xml:space="preserve"><value>5-hour limit</value></data>
+  <data name="Bar_WeeklyAllModels" xml:space="preserve"><value>Weekly · all models</value></data>
+  <data name="Bar_WeeklyModel" xml:space="preserve"><value>Weekly · {0}</value></data>
+  <data name="Bar_AltText" xml:space="preserve"><value>{0}: {1}% remaining</value></data>
+  <data name="Reset_Soon" xml:space="preserve"><value>Resets soon</value></data>
+  <data name="Reset_InMinutes" xml:space="preserve"><value>Resets in {0} min</value></data>
+  <data name="Reset_InHoursMinutes" xml:space="preserve"><value>Resets in {0} hr {1} min</value></data>
+  <data name="Reset_AtTime" xml:space="preserve"><value>Resets {0}</value></data>
+  <data name="Burn_LastsUntilReset" xml:space="preserve"><value>At the current pace, your session lasts until it resets.</value></data>
+  <data name="Burn_RunsOutAround" xml:space="preserve"><value>At the current pace (≈{0}%/h), the session runs out around {1}.</value></data>
+  <data name="Breakdown_Title" xml:space="preserve"><value>What's using your limits?</value></data>
+  <data name="Breakdown_Disclaimer" xml:space="preserve"><value>Approximate, from local samples on this machine — other devices and claude.ai aren't counted.</value></data>
+  <data name="Breakdown_NotEnoughHistory" xml:space="preserve"><value>Not enough local history yet — statistics appear after a few hours of recorded usage.</value></data>
+  <data name="Fact_Last24Hours" xml:space="preserve"><value>Last 24 h</value></data>
+  <data name="Fact_Last24HoursValue" xml:space="preserve"><value>{0}% of the weekly quota</value></data>
+  <data name="Fact_DailyAverage" xml:space="preserve"><value>Daily average</value></data>
+  <data name="Fact_DailyAverageValue" xml:space="preserve"><value>{0}% of the weekly quota per day</value></data>
+  <data name="Fact_BusiestPeriod" xml:space="preserve"><value>Busiest period</value></data>
+  <data name="Fact_Pace" xml:space="preserve"><value>Pace</value></data>
+  <data name="Breakdown_PerModelTitle" xml:space="preserve"><value>Per-model weekly limits</value></data>
+  <data name="Breakdown_PerModelLine" xml:space="preserve"><value>{0} — {1}% used · {2}</value></data>
+  <data name="Pace_BarelyDenting" xml:space="preserve"><value>barely denting the weekly limit</value></data>
+  <data name="Pace_LastsUntilReset" xml:space="preserve"><value>at this pace, the weekly limit lasts until it resets</value></data>
+  <data name="Pace_RunsOutAround" xml:space="preserve"><value>at this pace, the weekly limit runs out around {0}</value></data>
+  <data name="Heatmap_NotEnoughHistory" xml:space="preserve"><value>Not enough local history yet — the heatmap appears after a few hours of recorded usage.</value></data>
+  <data name="Heatmap_Title" xml:space="preserve"><value>Past month</value></data>
+  <data name="Heatmap_AltText" xml:space="preserve"><value>Heatmap of daily usage over the past five weeks, with week totals and a color legend</value></data>
+  <data name="Heatmap_CaptionPastMonth" xml:space="preserve"><value>usage over the past month</value></data>
+  <data name="Heatmap_CaptionSince" xml:space="preserve"><value>usage since {0}</value></data>
+  <data name="Heatmap_MonthTotal" xml:space="preserve"><value>month ≈ {0}% of one week's quota</value></data>
+  <data name="Fail_NotSignedIn" xml:space="preserve"><value>No local Claude Code session found. Sign in with `claude login` and reopen this page.</value></data>
+  <data name="Fail_TokenExpired" xml:space="preserve"><value>Your Claude Code token has expired and automatic refresh didn't succeed. Sign in again in Claude Code (run `claude` in a terminal), then refresh this page.</value></data>
+  <data name="Fail_RateLimited" xml:space="preserve"><value>Anthropic is rate-limiting usage checks right now (HTTP 429). This clears on its own — the page will show data again within a couple of minutes.</value></data>
+  <data name="Fail_RequestFailed" xml:space="preserve"><value>Anthropic's usage API returned an error (status {0}).</value></data>
+  <data name="Fail_Offline" xml:space="preserve"><value>Couldn't reach Anthropic — check your network connection.</value></data>
+  <data name="Fail_UnexpectedResponse" xml:space="preserve"><value>Got a response that didn't look like usage data.</value></data>
+  <data name="Fail_Unknown" xml:space="preserve"><value>Couldn't fetch usage right now.</value></data>
+
+  <!-- UsageDockBand -->
+  <data name="Tile_SessionLeft" xml:space="preserve"><value>{0}% session left</value></data>
+  <data name="Tile_Subtitle" xml:space="preserve"><value>{0}% week · resets {1}</value></data>
+  <data name="TileFail_NotSignedIn" xml:space="preserve"><value>Not signed in to Claude Code</value></data>
+  <data name="TileFail_TokenExpired" xml:space="preserve"><value>Session expired — sign in to Claude Code</value></data>
+  <data name="TileFail_RateLimited" xml:space="preserve"><value>Rate limited — retrying soon</value></data>
+  <data name="TileFail_RequestFailed" xml:space="preserve"><value>Anthropic API error ({0})</value></data>
+  <data name="TileFail_Offline" xml:space="preserve"><value>Offline — will retry</value></data>
+  <data name="TileFail_UnexpectedResponse" xml:space="preserve"><value>Unexpected response</value></data>
+  <data name="TileFail_Unknown" xml:space="preserve"><value>Unable to fetch usage</value></data>
+
+  <!-- ToastNotifier -->
+  <data name="Toast_LowQuotaTitle" xml:space="preserve"><value>Claude session running low</value></data>
+  <data name="Toast_LowQuotaBody" xml:space="preserve"><value>{0}% remaining · resets {1}</value></data>
+
+  <!-- PowerCommandProvider -->
+  <data name="Command_Subtitle" xml:space="preserve"><value>Session, weekly, and per-model limits</value></data>
+
+  <!-- SettingsManager -->
+  <data name="Setting_RefreshInterval_Title" xml:space="preserve"><value>Dock refresh interval</value></data>
+  <data name="Setting_RefreshInterval_Desc" xml:space="preserve"><value>How often the dock tile re-checks your usage</value></data>
+  <data name="Setting_Choice_15Seconds" xml:space="preserve"><value>15 seconds</value></data>
+  <data name="Setting_Choice_30Seconds" xml:space="preserve"><value>30 seconds</value></data>
+  <data name="Setting_Choice_1Minute" xml:space="preserve"><value>1 minute</value></data>
+  <data name="Setting_Choice_5Minutes" xml:space="preserve"><value>5 minutes</value></data>
+  <data name="Setting_Threshold_Title" xml:space="preserve"><value>Low-quota alert threshold</value></data>
+  <data name="Setting_Threshold_Desc" xml:space="preserve"><value>Switch the tile to the alert icon when less than this much of the session remains</value></data>
+  <data name="Setting_Toast_Title" xml:space="preserve"><value>Notify when the session runs low</value></data>
+  <data name="Setting_Toast_Desc" xml:space="preserve"><value>Show a Windows notification the first time session usage drops below the alert threshold</value></data>
+  <data name="Setting_Profile2Label_Title" xml:space="preserve"><value>Second account: label</value></data>
+  <data name="Setting_Profile2Label_Desc" xml:space="preserve"><value>Shown in its dock tile and command, e.g. "Work"</value></data>
+  <data name="Setting_Profile2Path_Title" xml:space="preserve"><value>Second account: credentials file</value></data>
+  <data name="Setting_Profile3Label_Title" xml:space="preserve"><value>Third account: label</value></data>
+  <data name="Setting_Profile3Label_Desc" xml:space="preserve"><value>Shown in its dock tile and command, e.g. "Client"</value></data>
+  <data name="Setting_Profile3Path_Title" xml:space="preserve"><value>Third account: credentials file</value></data>
+  <data name="Setting_ProfilePath_Desc" xml:space="preserve"><value>Full path to a saved .credentials.json for another Claude account. Leave blank to disable.</value></data>
+  <data name="Setting_Profile2_Fallback" xml:space="preserve"><value>Profile 2</value></data>
+  <data name="Setting_Profile3_Fallback" xml:space="preserve"><value>Profile 3</value></data>
+</root>

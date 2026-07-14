@@ -12,8 +12,8 @@ Legend: `[ ]` planned · `[~]` in progress · `[x]` done
 
 ## ⏭️ Next
 
-- [ ] WinGet / Microsoft Store distribution
-- [ ] Localize strings (en → more languages)
+- [ ] Submit to the Microsoft Store (tooling shipped in v1.0.0 — needs the maintainer's Partner Center account: reserve the name, run `scripts/build-store-package.ps1` with the assigned identity, upload; see docs/DISTRIBUTION.md)
+- [ ] More translation languages (v1.0.0 ships de/fr/es/ja/zh-Hans — adding one is a single `Strings.<culture>.resx` copy)
 
 ## 💡 Ideas
 
@@ -28,6 +28,8 @@ Legend: `[ ]` planned · `[~]` in progress · `[x]` done
 
 ## ✅ Done
 
+- [x] Localize strings: all user-facing strings moved to `.resx` resources (satellite assemblies inside the MSIX, Windows display language with English fallback) with German, French, Spanish, Japanese, and Simplified Chinese translations; heatmap pixel-font labels stay invariant by design (v1.0.0)
+- [x] WinGet / Microsoft Store distribution tooling: `scripts/build-store-package.ps1` (unsigned Store MSIX with Partner Center identity overrides) + `scripts/new-winget-manifest.ps1` (winget-pkgs manifest set from a signed MSIX — hashes, PackageFamilyName, passes `winget validate`) + `docs/DISTRIBUTION.md` covering both channels. Actual Store submission still needs the maintainer's Partner Center account (tracked in Next) (v1.0.0)
 - [x] Tabbed details page (Usage / Breakdown / Heatmap): Usage keeps just the bars (full-width, relative reset times); Breakdown adds what's-using-your-limits stats from the history log (last-24h burn, daily average, busiest period, weekly pace projection, per-model caps); Heatmap brings back v0.8.0's monthly GitHub-style calendar, enlarged to fill its tab and with a LESS→MORE color legend. The weekly time-of-day heatmap retired (its insight lives on as the busiest-period stat). Tab strip is Action.Submit buttons since AdaptiveCards has no native tabs (v0.9.0)
 - [x] Reverted the heatmap to the weekly design from v0.7.0 (weekday rows × 3-hour columns) — the monthly calendar layout didn't look as good; kept v0.8.0's command-bar Refresh, Configure-accounts entry, and 36-day retention (v0.8.1)
 - [x] Monthly usage heatmap: the graph now covers five Monday-aligned weeks as a GitHub-style calendar — day cells, month labels (JUN/JUL) at month starts, a separated WK week-totals column, and a month-total caption line, so day/week/month usage read from one graphic; history retention extended 8 → 36 days. Refresh moved from a card button to the page command bar (Enter / Ctrl+R) and "Configure accounts" (settings page) added to the More menu (Ctrl+K) (v0.8.0)

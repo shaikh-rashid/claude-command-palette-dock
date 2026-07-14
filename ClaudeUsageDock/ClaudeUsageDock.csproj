@@ -18,6 +18,8 @@
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <CsWinRTAotOptimizerEnabled>true</CsWinRTAotOptimizerEnabled>
     <DefaultLanguage>en-US</DefaultLanguage>
+    <!-- Strings.resx is the en-US set, so lookups for English skip the satellite probe. -->
+    <NeutralLanguage>en-US</NeutralLanguage>
   </PropertyGroup>
 
   <ItemGroup>

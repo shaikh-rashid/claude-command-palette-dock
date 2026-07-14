@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- French. Same keys and order as Strings.resx. -->
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+
+  <!-- Shared headings -->
+  <data name="Heading_Default" xml:space="preserve"><value>Utilisation de Claude</value></data>
+  <data name="Heading_WithLabel" xml:space="preserve"><value>Utilisation de Claude — {0}</value></data>
+
+  <!-- UsageDetailsPage -->
+  <data name="Command_Refresh" xml:space="preserve"><value>Actualiser</value></data>
+  <data name="Command_ConfigureAccounts" xml:space="preserve"><value>Configurer les comptes</value></data>
+  <data name="Header_PlanLine" xml:space="preserve"><value>Forfait : **{0}** · dernière vérification {1}</value></data>
+  <data name="Tab_Usage" xml:space="preserve"><value>Utilisation</value></data>
+  <data name="Tab_Breakdown" xml:space="preserve"><value>Répartition</value></data>
+  <data name="Tab_Heatmap" xml:space="preserve"><value>Carte de chaleur</value></data>
+  <data name="Bar_SessionLabel" xml:space="preserve"><value>Limite de 5 heures</value></data>
+  <data name="Bar_WeeklyAllModels" xml:space="preserve"><value>Hebdomadaire · tous les modèles</value></data>
+  <data name="Bar_WeeklyModel" xml:space="preserve"><value>Hebdomadaire · {0}</value></data>
+  <data name="Bar_AltText" xml:space="preserve"><value>{0} : {1} % restant</value></data>
+  <data name="Reset_Soon" xml:space="preserve"><value>Réinitialisation imminente</value></data>
+  <data name="Reset_InMinutes" xml:space="preserve"><value>Réinitialisation dans {0} min</value></data>
+  <data name="Reset_InHoursMinutes" xml:space="preserve"><value>Réinitialisation dans {0} h {1} min</value></data>
+  <data name="Reset_AtTime" xml:space="preserve"><value>Réinitialisation {0}</value></data>
+  <data name="Burn_LastsUntilReset" xml:space="preserve"><value>Au rythme actuel, votre session tiendra jusqu'à sa réinitialisation.</value></data>
+  <data name="Burn_RunsOutAround" xml:space="preserve"><value>Au rythme actuel (≈{0} %/h), la session sera épuisée vers {1}.</value></data>
+  <data name="Breakdown_Title" xml:space="preserve"><value>Qu'est-ce qui consomme vos limites ?</value></data>
+  <data name="Breakdown_Disclaimer" xml:space="preserve"><value>Approximatif, à partir d'échantillons locaux sur cette machine — les autres appareils et claude.ai ne sont pas comptés.</value></data>
+  <data name="Breakdown_NotEnoughHistory" xml:space="preserve"><value>Pas encore assez d'historique local — les statistiques apparaissent après quelques heures d'utilisation enregistrée.</value></data>
+  <data name="Fact_Last24Hours" xml:space="preserve"><value>Dernières 24 h</value></data>
+  <data name="Fact_Last24HoursValue" xml:space="preserve"><value>{0} % du quota hebdomadaire</value></data>
+  <data name="Fact_DailyAverage" xml:space="preserve"><value>Moyenne quotidienne</value></data>
+  <data name="Fact_DailyAverageValue" xml:space="preserve"><value>{0} % du quota hebdomadaire par jour</value></data>
+  <data name="Fact_BusiestPeriod" xml:space="preserve"><value>Période la plus active</value></data>
+  <data name="Fact_Pace" xml:space="preserve"><value>Rythme</value></data>
+  <data name="Breakdown_PerModelTitle" xml:space="preserve"><value>Limites hebdomadaires par modèle</value></data>
+  <data name="Breakdown_PerModelLine" xml:space="preserve"><value>{0} — {1} % utilisé · {2}</value></data>
+  <data name="Pace_BarelyDenting" xml:space="preserve"><value>la limite hebdomadaire est à peine entamée</value></data>
+  <data name="Pace_LastsUntilReset" xml:space="preserve"><value>à ce rythme, la limite hebdomadaire tiendra jusqu'à sa réinitialisation</value></data>
+  <data name="Pace_RunsOutAround" xml:space="preserve"><value>à ce rythme, la limite hebdomadaire sera épuisée vers {0}</value></data>
+  <data name="Heatmap_NotEnoughHistory" xml:space="preserve"><value>Pas encore assez d'historique local — la carte de chaleur apparaît après quelques heures d'utilisation enregistrée.</value></data>
+  <data name="Heatmap_Title" xml:space="preserve"><value>Mois écoulé</value></data>
+  <data name="Heatmap_AltText" xml:space="preserve"><value>Carte de chaleur de l'utilisation quotidienne sur les cinq dernières semaines, avec totaux hebdomadaires et légende des couleurs</value></data>
+  <data name="Heatmap_CaptionPastMonth" xml:space="preserve"><value>utilisation sur le mois écoulé</value></data>
+  <data name="Heatmap_CaptionSince" xml:space="preserve"><value>utilisation depuis le {0}</value></data>
+  <data name="Heatmap_MonthTotal" xml:space="preserve"><value>mois ≈ {0} % d'un quota hebdomadaire</value></data>
+  <data name="Fail_NotSignedIn" xml:space="preserve"><value>Aucune session Claude Code locale trouvée. Connectez-vous avec `claude login` puis rouvrez cette page.</value></data>
+  <data name="Fail_TokenExpired" xml:space="preserve"><value>Votre jeton Claude Code a expiré et le renouvellement automatique a échoué. Reconnectez-vous dans Claude Code (exécutez `claude` dans un terminal), puis actualisez cette page.</value></data>
+  <data name="Fail_RateLimited" xml:space="preserve"><value>Anthropic limite actuellement les vérifications d'utilisation (HTTP 429). Cela se résout tout seul — la page affichera de nouveau des données d'ici quelques minutes.</value></data>
+  <data name="Fail_RequestFailed" xml:space="preserve"><value>L'API d'utilisation d'Anthropic a renvoyé une erreur (statut {0}).</value></data>
+  <data name="Fail_Offline" xml:space="preserve"><value>Impossible de joindre Anthropic — vérifiez votre connexion réseau.</value></data>
+  <data name="Fail_UnexpectedResponse" xml:space="preserve"><value>La réponse ne ressemblait pas à des données d'utilisation.</value></data>
+  <data name="Fail_Unknown" xml:space="preserve"><value>Impossible de récupérer l'utilisation pour le moment.</value></data>
+
+  <!-- UsageDockBand -->
+  <data name="Tile_SessionLeft" xml:space="preserve"><value>{0} % de session restant</value></data>
+  <data name="Tile_Subtitle" xml:space="preserve"><value>{0} % semaine · réinitialisation {1}</value></data>
+  <data name="TileFail_NotSignedIn" xml:space="preserve"><value>Non connecté à Claude Code</value></data>
+  <data name="TileFail_TokenExpired" xml:space="preserve"><value>Session expirée — connectez-vous à Claude Code</value></data>
+  <data name="TileFail_RateLimited" xml:space="preserve"><value>Débit limité — nouvel essai bientôt</value></data>
+  <data name="TileFail_RequestFailed" xml:space="preserve"><value>Erreur de l'API Anthropic ({0})</value></data>
+  <data name="TileFail_Offline" xml:space="preserve"><value>Hors ligne — nouvel essai à venir</value></data>
+  <data name="TileFail_UnexpectedResponse" xml:space="preserve"><value>Réponse inattendue</value></data>
+  <data name="TileFail_Unknown" xml:space="preserve"><value>Impossible de récupérer l'utilisation</value></data>
+
+  <!-- ToastNotifier -->
+  <data name="Toast_LowQuotaTitle" xml:space="preserve"><value>Session Claude bientôt épuisée</value></data>
+  <data name="Toast_LowQuotaBody" xml:space="preserve"><value>{0} % restant · réinitialisation {1}</value></data>
+
+  <!-- PowerCommandProvider -->
+  <data name="Command_Subtitle" xml:space="preserve"><value>Limites de session, hebdomadaires et par modèle</value></data>
+
+  <!-- SettingsManager -->
+  <data name="Setting_RefreshInterval_Title" xml:space="preserve"><value>Intervalle d'actualisation du dock</value></data>
+  <data name="Setting_RefreshInterval_Desc" xml:space="preserve"><value>Fréquence à laquelle la tuile du dock revérifie votre utilisation</value></data>
+  <data name="Setting_Choice_15Seconds" xml:space="preserve"><value>15 secondes</value></data>
+  <data name="Setting_Choice_30Seconds" xml:space="preserve"><value>30 secondes</value></data>
+  <data name="Setting_Choice_1Minute" xml:space="preserve"><value>1 minute</value></data>
+  <data name="Setting_Choice_5Minutes" xml:space="preserve"><value>5 minutes</value></data>
+  <data name="Setting_Threshold_Title" xml:space="preserve"><value>Seuil d'alerte de quota bas</value></data>
+  <data name="Setting_Threshold_Desc" xml:space="preserve"><value>Basculer la tuile sur l'icône d'alerte lorsqu'il reste moins que cette part de la session</value></data>
+  <data name="Setting_Toast_Title" xml:space="preserve"><value>Notifier quand la session s'épuise</value></data>
+  <data name="Setting_Toast_Desc" xml:space="preserve"><value>Afficher une notification Windows la première fois que l'utilisation de la session passe sous le seuil d'alerte</value></data>
+  <data name="Setting_Profile2Label_Title" xml:space="preserve"><value>Deuxième compte : libellé</value></data>
+  <data name="Setting_Profile2Label_Desc" xml:space="preserve"><value>Affiché dans sa tuile et sa commande, p. ex. « Travail »</value></data>
+  <data name="Setting_Profile2Path_Title" xml:space="preserve"><value>Deuxième compte : fichier d'identifiants</value></data>
+  <data name="Setting_Profile3Label_Title" xml:space="preserve"><value>Troisième compte : libellé</value></data>
+  <data name="Setting_Profile3Label_Desc" xml:space="preserve"><value>Affiché dans sa tuile et sa commande, p. ex. « Client »</value></data>
+  <data name="Setting_Profile3Path_Title" xml:space="preserve"><value>Troisième compte : fichier d'identifiants</value></data>
+  <data name="Setting_ProfilePath_Desc" xml:space="preserve"><value>Chemin complet vers un .credentials.json enregistré d'un autre compte Claude. Laisser vide pour désactiver.</value></data>
+  <data name="Setting_Profile2_Fallback" xml:space="preserve"><value>Profil 2</value></data>
+  <data name="Setting_Profile3_Fallback" xml:space="preserve"><value>Profil 3</value></data>
+</root>
