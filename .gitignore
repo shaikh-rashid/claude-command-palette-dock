@@ -8,6 +8,7 @@ release-output/
 store-output/
 winget-manifests/
 docs/store-import/
+listingData-*.csv
 
 # Signing material — never commit certificates or private keys
 *.pfx
