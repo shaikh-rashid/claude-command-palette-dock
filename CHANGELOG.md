@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.3] - 2026-07-13
+
+### Fixed
+
+- The 0.9.2 cert-store signing then handed `signtool` a malformed argument (`SignTool Error: Invalid option: /`): the `/sm` store flag was spliced in with inline array splatting mixed among literal arguments, which PowerShell's native-command handling mangled. The signing command is now built as one flat argument array and passed as a whole, and the resolved command line is echoed to the job log so any future argument problem is visible at a glance.
+
 ## [0.9.2] - 2026-07-13
 
 ### Fixed

@@ -106,12 +106,19 @@ function Set-MsixSignature {
         }
 
         try {
-            # /sm makes signtool search the machine store; omit it for CurrentUser.
-            $storeArgs = if ($useMachineStore) { @("/sm") } else { @() }
+            # Build one flat argument array and pass it as a whole. Inline
+            # splatting (@storeArgs) mixed among literal args gets mangled by
+            # PowerShell's native-command handling — that shipped a broken
+            # invocation once ("Invalid option: /"). /sm makes signtool search
+            # the machine store; it's omitted for CurrentUser.
+            $signArgs = @("sign", "/fd", "SHA256")
+            if ($useMachineStore) { $signArgs += "/sm" }
+            $signArgs += @("/sha1", $imported.Thumbprint, $MsixPath)
+            Write-Host "signtool $($signArgs -join ' ')"
             # Don't pipe to Out-Null: signtool writes "Error information:
             # SignerSign() failed" diagnostics to stdout, and hiding them cost a
             # CI debugging round.
-            & $signToolExe sign /fd SHA256 @storeArgs /sha1 $imported.Thumbprint $MsixPath
+            & $signToolExe $signArgs
             if ($LASTEXITCODE -ne 0) { throw "signtool failed" }
         }
         finally {
