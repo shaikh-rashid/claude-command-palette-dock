@@ -6,10 +6,10 @@
 # PackageFamilyName that winget validates at install time), so the only inputs
 # are the package and the public URL it will be downloaded from.
 #
-# Example (after downloading the GitLab/GitHub release asset):
+# Example (after downloading the GitHub release asset):
 #   .\scripts\new-winget-manifest.ps1 `
 #       -MsixPath release-output\ClaudeUsageDock.msix `
-#       -InstallerUrl "https://gitlab.com/shaikh.rashid/claude-command-palette-dock/-/releases/v1.0.0/downloads/ClaudeUsageDock.msix"
+#       -InstallerUrl "https://github.com/shaikh-rashid/claude-command-palette-dock/releases/download/v1.0.0/ClaudeUsageDock.msix"
 #
 # IMPORTANT: winget-pkgs validation actually installs the package, which
 # requires its signature to chain to a trusted root. A self-signed release
@@ -110,8 +110,8 @@ PackageLocale: en-US
 Publisher: $($appxManifest.Package.Properties.PublisherDisplayName)
 PackageName: $($appxManifest.Package.Properties.DisplayName)
 License: MIT
-LicenseUrl: https://gitlab.com/shaikh.rashid/claude-command-palette-dock/-/blob/main/LICENSE
-PackageUrl: https://gitlab.com/shaikh.rashid/claude-command-palette-dock
+LicenseUrl: https://github.com/shaikh-rashid/claude-command-palette-dock/blob/main/LICENSE
+PackageUrl: https://github.com/shaikh-rashid/claude-command-palette-dock
 ShortDescription: Live Claude Code subscription usage in the PowerToys Command Palette dock.
 Description: |-
   A PowerToys Command Palette extension that shows your Claude Code
