@@ -20,6 +20,17 @@ Inspired by [omgapnt/ClaudeUsage](https://github.com/omgapnt/ClaudeUsage).
 - **Resilient polling** — backs off when Anthropic rate-limits (HTTP 429) and keeps showing the last good numbers for up to 10 minutes instead of an error tile.
 - **Privacy-first** — talks only to Anthropic's official endpoints with the token Claude Code already stores locally; usage history is a local file.
 
+## 📸 Screenshots
+
+|  |  |
+|:--:|:--:|
+| ![Dock tile](docs/store-assets/01-dock-tile.png) | ![Usage tab](docs/store-assets/02-usage.png) |
+| **Dock tile** — live session &amp; weekly usage remaining | **Usage** — session, weekly &amp; per-model bars |
+| ![Breakdown tab](docs/store-assets/03-breakdown.png) | ![Heatmap tab](docs/store-assets/04-heatmap.png) |
+| **Breakdown** — what's driving your usage | **Heatmap** — monthly usage calendar |
+
+<sub>Representative renderings of the Command Palette UI.</sub>
+
 ## 🚀 Getting started
 
 See **[INSTALL.md](INSTALL.md)** for full step-by-step instructions, troubleshooting, and uninstall.
