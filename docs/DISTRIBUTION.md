@@ -82,11 +82,32 @@ Repeat the **Store listing** rows for each of the six languages — screenshots
 can be reused across languages; the copy and captions are per-language (one CSV
 row each).
 
-> To fill the listing from a folder instead of by hand, everything above is
-> bundled for Microsoft's [StoreBroker](https://github.com/microsoft/StoreBroker)
-> tool under [`store-submission/`](store-submission/) (per-language PDP files +
-> screenshots); regenerate it with `scripts\build-store-submission.ps1`. See its
-> [README](store-submission/README.md).
+### Bulk-fill the listing (Import listings)
+
+Instead of pasting field by field, Partner Center can import a whole folder
+(**app overview → Store listings → Import listings → Upload folder**). Two ways
+to produce that folder:
+
+- **Native import (simplest).** The import CSV is a transposed template whose
+  `Field`/`ID`/`Type` rows — including a per-app `ID` — must stay unchanged, so
+  first **Export listing** from Partner Center, then fill the language columns
+  from this repo's content:
+
+  ```powershell
+  .\scripts\fill-store-listing-csv.ps1 -ExportedCsv .\exported-listing.csv
+  ```
+
+  That writes `docs\store-import\listing-import.csv` plus the four screenshots
+  (referenced as `store-import/<file>`), preserving the export's Field/ID/Type
+  rows and writing only the `default` + per-language columns. It prints any field
+  rows it didn't recognize. Then upload the `store-import` folder via **Import
+  listings → Upload folder**.
+
+- **StoreBroker (API automation).** The [`store-submission/`](store-submission/)
+  folder holds per-language StoreBroker PDP files + screenshots for a fully
+  scripted submission via the Store submission API — no export needed. Regenerate
+  with `scripts\build-store-submission.ps1`; details in its
+  [README](store-submission/README.md).
 
 Notes:
 

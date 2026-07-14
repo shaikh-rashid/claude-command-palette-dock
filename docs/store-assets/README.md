@@ -10,6 +10,24 @@ size **1366×768** (PNG).
 | `03-breakdown.png` | Breakdown tab — usage statistics | `BreakdownTab` |
 | `04-heatmap.png` | Heatmap tab — monthly calendar | `HeatmapTab` |
 
+## Preview
+
+**Dock tile** — session and weekly usage remaining at a glance
+
+![Dock tile screenshot](01-dock-tile.png)
+
+**Usage tab** — color-coded session, weekly, and per-model bars
+
+![Usage tab screenshot](02-usage.png)
+
+**Breakdown tab** — what's driving your usage
+
+![Breakdown tab screenshot](03-breakdown.png)
+
+**Heatmap tab** — monthly GitHub-style calendar
+
+![Heatmap tab screenshot](04-heatmap.png)
+
 ## These are representative mockups
 
 They are **not** literal OS screen captures — they're HTML renderings (`src/`)
