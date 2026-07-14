@@ -121,6 +121,10 @@ build-and-install.ps1           publish -> MSIX pack -> sign -> sideload (local 
 global.json                     pins the .NET SDK version
 ```
 
+## 🔒 Privacy
+
+The extension talks only to Anthropic's official endpoints using the token Claude Code already stores locally; it sends nothing to the developer or any third party, has no telemetry, and keeps its usage history in a local file. See [PRIVACY.md](PRIVACY.md) for the full policy.
+
 ## 🗺️ Contributing & roadmap
 
 Planned work and ideas are tracked in [TODO.md](TODO.md). Changes are recorded in [CHANGELOG.md](CHANGELOG.md).
