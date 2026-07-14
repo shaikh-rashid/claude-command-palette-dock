@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - The PRIVACY.md contact link now points at the GitHub repository instead of GitLab.
+- docs/DISTRIBUTION.md and scripts/new-winget-manifest.ps1 reference the GitHub repository (privacy-policy, license, package, and release-asset URLs) instead of GitLab.
+
+### Added
+
+- A Store submission checklist in docs/DISTRIBUTION.md mapping each Partner Center field to the repo file that supplies it (package, listing copy, screenshots, captions, privacy-policy URL), plus expanded per-language listing instructions.
 
 ## [1.0.0] - 2026-07-14
 

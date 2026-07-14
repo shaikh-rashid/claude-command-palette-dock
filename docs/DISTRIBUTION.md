@@ -1,6 +1,6 @@
 # 📦 Distribution: Microsoft Store & WinGet
 
-How to publish ClaudeUsageDock beyond the GitLab/GitHub release downloads.
+How to publish ClaudeUsageDock beyond the GitHub release downloads.
 Both channels remove the biggest install-friction of the direct download:
 users no longer have to trust and import the self-signed release certificate.
 
@@ -34,18 +34,53 @@ Per release:
 
 2. In Partner Center, create a submission and upload
    `store-output\ClaudeUsageDock-Store.msix` on the **Packages** page.
-3. Fill in the listing. The package declares en-US, de-DE, fr-FR, es-ES, ja and
-   zh-Hans, so Partner Center offers a listing per language — the store
-   description can be written (or machine-assisted) per language, independent
-   of the in-app strings.
+3. Fill in the **Store listing** (per language). The package declares en-US,
+   de-DE, fr-FR, es-ES, ja and zh-Hans, so Partner Center offers one listing per
+   language; the listing copy is separate from the in-app strings and is
+   pre-written for every language in this repo:
+   - **Description, short description, product features, search terms, and
+     "what's new"** — copy the row for each language from
+     [`store-listings.csv`](store-listings.csv) (one column per field). The
+     `ProductFeatures` and `SearchTerms` cells hold several items separated by
+     ` | ` — paste each item into its own Partner Center box.
+   - **Screenshots** — upload the four 1366×768 PNGs in
+     [`store-assets/`](store-assets/) (`01-dock-tile`, `02-usage`,
+     `03-breakdown`, `04-heatmap`). One set can be reused across all languages.
+   - **Screenshot captions** — one caption per screenshot per language in
+     [`store-screenshot-captions.csv`](store-screenshot-captions.csv).
 4. Pricing: free. Under **Properties**, category "Developer tools".
 5. **Privacy policy URL** (required): the submission asks whether the app
    accesses/collects/transmits personal information — answer **Yes** (the app
    reads and transmits your Claude Code OAuth credentials, though only to
    Anthropic's own endpoints), and give the URL of [PRIVACY.md](../PRIVACY.md)
    as served by your repo host, e.g.
-   `https://gitlab.com/shaikh.rashid/claude-command-palette-dock/-/blob/main/PRIVACY.md`.
+   `https://github.com/shaikh-rashid/claude-command-palette-dock/blob/main/PRIVACY.md`.
 6. Submit for certification (typically 1–3 business days).
+
+### 📋 Submission checklist
+
+Everything Partner Center asks you to upload or paste, and where it comes from
+in this repo. Build `store-output\ClaudeUsageDock-Store.msix` with step 1 first
+(it's gitignored, so it isn't committed).
+
+| Partner Center page / field | What to provide | Source in this repo |
+|---|---|---|
+| Packages | The app package (unsigned) | `store-output\ClaudeUsageDock-Store.msix` |
+| Store listing → Description | Long description | [`store-listings.csv`](store-listings.csv) · `Description` |
+| Store listing → Short description | One-line summary | [`store-listings.csv`](store-listings.csv) · `ShortDescription` |
+| Store listing → What's new in this version | Release notes | [`store-listings.csv`](store-listings.csv) · `WhatsNew` |
+| Store listing → Product features | Feature bullets (one per box) | [`store-listings.csv`](store-listings.csv) · `ProductFeatures` (pipe-separated) |
+| Store listing → Search terms | Up to 7 keywords (one per box) | [`store-listings.csv`](store-listings.csv) · `SearchTerms` (pipe-separated) |
+| Store listing → Screenshots | 4 × 1366×768 PNG | [`store-assets/`](store-assets/) `01`–`04-*.png` |
+| Store listing → each screenshot's caption | Per-image caption | [`store-screenshot-captions.csv`](store-screenshot-captions.csv) |
+| Properties → Privacy policy URL | **Yes**, plus the hosted URL | [`PRIVACY.md`](../PRIVACY.md) → its `github.com/…/blob/main/PRIVACY.md` URL |
+| Properties → Category | "Developer tools" | — |
+| Pricing and availability | Free | — |
+| Age ratings | Complete the IARC questionnaire (no objectionable content) | — |
+
+Repeat the **Store listing** rows for each of the six languages — screenshots
+can be reused across languages; the copy and captions are per-language (one CSV
+row each).
 
 Notes:
 
@@ -73,7 +108,7 @@ winget install "Claude Usage Dock" --source msstore
 > ⚠️ **Certificate constraint:** winget-pkgs validation *installs* the MSIX,
 > which requires its signature to chain to a root the machine already trusts.
 > The project's self-signed release certificate does not, so a submission
-> built from the current GitLab/GitHub release assets **will fail validation**.
+> built from the current GitHub release assets **will fail validation**.
 > This route needs either (a) the Store package to exist and Route A used
 > instead, or (b) the release pipeline re-keyed to a purchased code-signing
 > certificate. The tooling below is ready for the day either happens, and the
@@ -84,7 +119,7 @@ Generate the manifests from a signed release MSIX:
 ```powershell
 .\scripts\new-winget-manifest.ps1 `
     -MsixPath release-output\ClaudeUsageDock.msix `
-    -InstallerUrl "https://gitlab.com/shaikh.rashid/claude-command-palette-dock/-/releases/v1.0.0/downloads/ClaudeUsageDock.msix"
+    -InstallerUrl "https://github.com/shaikh-rashid/claude-command-palette-dock/releases/download/v1.0.0/ClaudeUsageDock.msix"
 ```
 
 The script reads the identity and version out of the MSIX, computes
